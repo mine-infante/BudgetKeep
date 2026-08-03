@@ -27,6 +27,25 @@ Example:
 PV-001
 
 ---
+## Business Analysis Specification
+
+BAS-xxx
+
+Example:
+
+BAS-001
+
+---
+
+## Business Domain Specification
+
+BDS-xxx
+
+Example:
+
+BDS-001
+
+---
 
 ## Functional Requirement
 
