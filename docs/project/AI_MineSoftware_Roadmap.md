@@ -195,3 +195,74 @@ Por ejemplo:
 •	BE-001 — Backend Development Expert 
 •	FE-001 — Frontend Development Expert 
 •	QA-001 — Quality Assurance Expert
+
+# Flujo
+Project Office
+        │
+        ▼
+PD-001
+(Product Discovery)
+        │
+        ▼
+Product Vision
+        │
+──────────────
+        │
+        ▼
+BA-001
+(Business Analysis)
+        │
+        ▼
+Business Analysis
+Business Domain
+        │
+──────────────
+        │
+        ▼
+SA-001
+(Solution Architecture)
+        │
+        ▼
+Solution Architecture
+        │
+──────────────
+        │
+        ▼
+TA-001
+(Technical Architecture)
+        │
+        ▼
+Technical Architecture
+        │
+──────────────
+        │
+        ▼
+DB-001
+(Database Design)
+        │
+        ▼
+Database Design
+        │
+──────────────
+        │
+        ▼
+BE-001
+(Backend Development)
+        │
+        ▼
+Backend
+        │
+──────────────
+        │
+        ▼
+FE-001
+(Frontend Development)
+        │
+        ▼
+Frontend
+        │
+──────────────
+        │
+        ▼
+QA-001
+(Quality Assurance)
