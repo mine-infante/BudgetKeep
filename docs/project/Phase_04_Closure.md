@@ -1,120 +1,116 @@
-# Phase 04 – Technical Architecture Closure
+# Phase 04 Closure
 
-**Methodology:** AI MineSoftware
+Version: 1.1
 
-**Project:** BudgetKeep
+Status: Approved
 
-**Phase:** Phase 04 – Technical Architecture
+Classification: Phase Closure
 
-**Status:** Approved
+Document ID: Phase_04_Closure
 
-**Owner:** Project Office
-
-**Closure Version:** 1.0
+Owner: Project Office
 
 ---
 
 # 1. Purpose
 
-This document formally records the completion of **Phase 04 – Technical Architecture** of the BudgetKeep project under the AI MineSoftware methodology.
+This document formally records the completion and approval of Phase 04 – Technical Architecture for the BudgetKeep project under the AI MineSoftware methodology.
 
-Its purpose is to document the governance review performed by the Project Office, the approval of the Technical Architecture deliverable, and the incorporation of the approved artifact into the official project baseline.
+It certifies that the Technical Architecture has been reviewed, approved and incorporated into the official project baseline.
 
----
-
-# 2. Phase Objective
-
-The objective of Phase 04 was to transform the approved Solution Architecture into a coherent, implementable and traceable Technical Architecture while preserving the approved architectural baseline and maintaining clear separation of responsibilities between technical disciplines.
+This document supersedes the previous Phase 04 closure issued for Technical Architecture Specification v1.0 following an exceptional governance-approved reopening of the phase.
 
 ---
 
-# 3. Reviewed Artifact
+# 2. Background
 
-The following artifact was reviewed by the Project Office.
+After the original approval of Phase 04, the Project Office identified a governance improvement opportunity related to the ownership of project-wide technology decisions.
 
-| Artifact                             | Version | Status   |
-| ------------------------------------ | ------- | -------- |
-| Technical Architecture Specification | 1.0     | Approved |
+The approved Technical Architecture methodology was therefore updated from version 1.0 to version 1.1 in order to introduce:
 
----
+- Official Technology Stack
+- Technology Stack Workshop
+- Technology Decision governance
 
-# 4. Governance Review Result
+Once the methodology was updated, the Technical Architecture Specification was aligned with the new methodology through a controlled Gap Analysis process.
 
-The Project Office performed the governance review of the Technical Architecture Specification using the AI MineSoftware methodology.
-
-The review confirmed that the document:
-
-* preserves the approved Product Vision;
-* preserves the approved Business Analysis Specification;
-* preserves the approved Business Domain Specification;
-* preserves the approved Solution Architecture;
-* remains consistent with the approved Decision Log;
-* respects the separation of responsibilities between technical disciplines;
-* maintains complete traceability with the approved project artifacts;
-* prepares the project for iterative execution using Functional Capabilities (FC).
-
-No Critical observations were identified.
-
-No Major observations preventing approval were identified.
-
-The Project Office recommends the approval of the Technical Architecture Specification as part of the official project baseline.
+The Project Office subsequently reviewed the updated specification and approved the revised project baseline.
 
 ---
 
-# 5. Approved Project Artifacts
+# 3. Approved Deliverables
 
-At the conclusion of Phase 04, the approved project baseline consists of the following artifacts.
+The following deliverables are approved as part of Phase 04.
 
-## Product Documentation
-
-* Product Vision v1.1
-* Decision Log
-* Business Analysis Specification v1.0
-* Business Domain Specification v1.0
-* Solution Architecture Specification v1.0
-* Technical Architecture Specification v1.0
-
-## Phase Closures
-
-* Phase 01 Closure
-* Phase 02 Closure
-* Phase 03 Closure
-* Phase 04 Closure
+| Deliverable | Version | Status |
+|-------------|---------|--------|
+| Technical Architecture Specification | 1.1 | Approved |
+| Official Technology Stack | 1.0 | Approved |
+| Technical Decision Records Framework | 1.0 | Approved |
 
 ---
 
-# 6. Phase Outcome
+# 4. Baseline Update
 
-Phase 04 is considered successfully completed.
+The official project baseline is updated to include:
 
-The project now possesses an approved Technical Architecture that provides the technical foundation required by the subsequent implementation disciplines.
+- Product Vision v1.1
+- Decision Log
+- Business Analysis Specification v1.0
+- Business Domain Specification v1.0
+- Solution Architecture Specification v1.0
+- Technical Architecture Specification v1.1
+- Official Technology Stack
+- Phase 01 Closure
+- Phase 02 Closure
+- Phase 03 Closure
+- Phase 04 Closure
 
-The approved Technical Architecture becomes part of the official project baseline and shall be used as the mandatory technical reference during the following phases.
-
----
-
-# 7. Authorization
-
-The Project Office authorizes the closure of **Phase 04 – Technical Architecture** and the incorporation of the approved Technical Architecture Specification into the official project baseline.
-
-From this point forward, all subsequent technical disciplines shall preserve the approved Technical Architecture unless a formal governance decision authorizes its modification.
-
----
-
-# 8. Next Phase
-
-The next phase of the AI MineSoftware methodology is:
-
-**Phase 05 – Database Design**
-
-The Project Office shall define and approve the methodological specification of **DB-001 – Database Design Expert** before initiating the Database Design phase of the BudgetKeep project.
+This baseline becomes the official reference for all subsequent technical disciplines.
 
 ---
 
-# 9. Closure Statement
+# 5. Governance Resolution
 
-Phase 04 – Technical Architecture is formally closed.
+The Project Office confirms that:
 
-The Technical Architecture Specification v1.0 is approved and incorporated into the official project baseline.
+- the Technical Architecture complies with the AI MineSoftware methodology;
+- the Technical Architecture preserves the approved Solution Architecture;
+- the Official Technology Stack has been established as the unique source of project-wide technology decisions;
+- the Technology Stack Workshop has been completed;
+- project-wide technology decisions shall not be redefined by subsequent technical specialists;
+- all future implementation disciplines shall reuse the approved Technical Architecture and Official Technology Stack.
 
-The Project Office authorizes the project to proceed to the next phase of the AI MineSoftware methodology.
+---
+
+# 6. Authorization for Subsequent Phases
+
+With the approval of this document, the following phases are authorized to begin:
+
+- Database Design
+- Backend Development
+- Frontend Development
+- Infrastructure
+- Security
+- DevOps
+- Quality Assurance
+
+Each discipline shall consume the approved project baseline and shall preserve complete traceability with the Technical Architecture.
+
+---
+
+# 7. Phase Completion
+
+Phase 04 – Technical Architecture is hereby declared officially closed.
+
+The Technical Architecture Specification v1.1 and its associated Official Technology Stack become part of the official BudgetKeep project baseline.
+
+Any future modification to the Technical Architecture or the Official Technology Stack shall require the formal governance process defined by AI MineSoftware before becoming part of the project baseline.
+
+---
+
+Approved by:
+
+Project Office
+
+AI MineSoftware Governance

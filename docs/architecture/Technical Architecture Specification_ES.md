@@ -2,9 +2,9 @@
 
 # Technical Architecture Specification
 
-Versión: 1.0
+Versión: 1.1
 
-Estado: Draft
+Estado: Approved
 
 Clasificación: Documento de Arquitectura Técnica
 
@@ -21,7 +21,7 @@ Owner: Technical Architecture
 | Producto | BudgetKeep |
 | Artefacto | Technical Architecture Specification |
 | Identificador | TA-001 |
-| Estado | Draft |
+| Estado | Approved |
 | Metodología | AI MineSoftware |
 | Especialista responsable | TA-001 – Technical Architecture Expert |
 | Documento de entrada | Solution Architecture Specification v1.0 |
@@ -51,7 +51,11 @@ Asimismo, esta arquitectura deberá proporcionar lineamientos técnicos comunes 
 
 La presente Arquitectura Técnica define la organización técnica general de BudgetKeep y constituye la referencia oficial para todas las disciplinas responsables de la implementación del producto.
 
-Su alcance comprende la definición de principios técnicos, criterios de organización, estándares, patrones arquitectónicos, decisiones técnicas transversales y mecanismos de trazabilidad necesarios para implementar la Arquitectura de Solución aprobada.
+Su alcance comprende la definición de principios técnicos, criterios de organización, estándares, patrones técnicos, decisiones técnicas transversales, mecanismos de trazabilidad, la organización física de la solución, la estrategia tecnológica y el Technology Stack propuesto necesarios para implementar la Arquitectura de Solución aprobada.
+
+La definición del Technology Stack forma parte de la Arquitectura Técnica y deberá realizarse conforme al proceso de Technology Stack Workshop establecido por la metodología AI MineSoftware.
+
+Las tecnologías propuestas formarán parte del Technology Stack oficial únicamente después de ser aprobadas mediante el proceso de gobernanza del proyecto.
 
 Este documento no forma parte del diseño detallado de las disciplinas especializadas y, por lo tanto, no define modelos físicos de datos, APIs, componentes de infraestructura, mecanismos de despliegue, interfaces de usuario ni decisiones específicas de implementación tecnológica.
 
@@ -308,9 +312,11 @@ Las modificaciones estructurales deberán justificarse mediante el proceso forma
 
 ## TR-008 Mantener independencia tecnológica
 
-La Arquitectura Técnica no deberá depender de una tecnología específica.
+La Arquitectura Técnica deberá mantenerse independiente de tecnologías específicas al definir principios, patrones, organización técnica y lineamientos arquitectónicos.
 
-Las decisiones tecnológicas serán definidas posteriormente por las disciplinas especializadas respetando los lineamientos establecidos en este documento.
+Las decisiones tecnológicas de alcance global deberán establecerse mediante el Technology Stack Workshop y documentarse en el Official Technology Stack aprobado.
+
+Las disciplinas especializadas deberán reutilizar dichas decisiones como parte de la línea base técnica del proyecto y no podrán redefinirlas sin seguir el proceso formal de gobernanza establecido por AI MineSoftware.
 
 ---
 
@@ -394,6 +400,41 @@ No deberán existir dependencias que comprometan la mantenibilidad, trazabilidad
 La incorporación de nuevas capacidades funcionales deberá reutilizar la organización técnica definida en esta Arquitectura.
 
 Cuando sea necesaria una modificación estructural, ésta deberá realizarse mediante el proceso formal de gobernanza del proyecto y preservar la consistencia con la Arquitectura de Solución aprobada.
+
+---
+
+## 7.7 Arquitectura Física
+
+La Arquitectura Física define la organización física general de la solución requerida para implementar la Arquitectura de Solución y la Arquitectura Técnica aprobadas.
+
+Su propósito consiste en establecer la distribución técnica de los principales elementos de la solución sin entrar en detalles propios de la implementación o del aprovisionamiento de infraestructura.
+
+La Arquitectura Física constituye la referencia para las disciplinas responsables de Infraestructura, DevOps, Backend Development, Frontend Development y Database Design.
+
+---
+
+## 7.8 Organización Física de la Solución
+
+La solución deberá organizarse mediante una estructura física consistente que preserve los límites técnicos definidos por la Arquitectura Técnica.
+
+La organización física podrá evolucionar durante el proyecto siempre que preserve:
+
+- la Arquitectura de Solución aprobada;
+- la Arquitectura Técnica aprobada;
+- el Technology Stack aprobado;
+- la trazabilidad entre los artefactos del proyecto.
+
+La definición detallada de servidores, servicios administrados, redes, recursos cloud, contenedores o ambientes de ejecución corresponderá a las disciplinas especializadas y no forma parte del presente documento.
+
+---
+
+## 7.9 Límites Técnicos
+
+La Arquitectura Física deberá mantener límites claramente definidos entre los distintos elementos físicos de la solución.
+
+Estos límites deberán minimizar el acoplamiento entre componentes, facilitar el despliegue independiente cuando sea aplicable y favorecer la evolución controlada del producto.
+
+La definición de dichos límites servirá como referencia para las decisiones posteriores de Infraestructura, DevOps y las disciplinas responsables de la implementación.
 
 # 8. Componentes Técnicos
 
@@ -558,6 +599,46 @@ Las relaciones técnicas deberán respetar las siguientes restricciones generale
 
 La definición de mecanismos específicos de comunicación, contratos de integración, APIs, protocolos o tecnologías será responsabilidad de las disciplinas especializadas durante las fases posteriores del proyecto.
 
+---
+
+## 10.4 Estrategia de Comunicación Técnica
+
+La Arquitectura Técnica define la estrategia general de comunicación entre los Componentes Técnicos con el propósito de preservar la separación de responsabilidades, minimizar el acoplamiento y facilitar la evolución de la solución.
+
+Toda comunicación entre Componentes Técnicos deberá respetar las relaciones y restricciones definidas en la presente Arquitectura Técnica.
+
+Los mecanismos específicos de comunicación serán definidos posteriormente por las disciplinas responsables de la implementación.
+
+---
+
+## 10.5 Estrategia de APIs
+
+Cuando la solución requiera interfaces de programación entre componentes o con consumidores externos, dichas interfaces deberán diseñarse de forma consistente con la Arquitectura de Solución y la Arquitectura Técnica aprobadas.
+
+La Arquitectura Técnica establece los principios generales para la organización de dichas interfaces.
+
+La definición de contratos, operaciones, formatos de intercambio, mecanismos de autenticación y demás aspectos de implementación será responsabilidad de las disciplinas especializadas.
+
+---
+
+## 10.6 Estrategia de Integración
+
+Las integraciones con componentes o servicios externos deberán preservar la independencia funcional de BudgetKeep y minimizar el impacto de cambios en sistemas externos.
+
+Toda integración deberá mantener la trazabilidad con los Componentes Arquitectónicos y Componentes Técnicos involucrados.
+
+La implementación específica de mecanismos de integración será responsabilidad de las disciplinas correspondientes.
+
+---
+
+## 10.7 Contratos Técnicos
+
+Las disciplinas responsables de la implementación deberán definir contratos técnicos claros para toda interacción entre componentes.
+
+Los contratos técnicos deberán documentar, cuando corresponda, las responsabilidades, entradas, salidas, restricciones y dependencias de los componentes involucrados.
+
+La presente Arquitectura Técnica establece la necesidad de dichos contratos, mientras que su diseño detallado corresponderá a las disciplinas especializadas.
+
 # 11. Estándares Técnicos
 
 Los Estándares Técnicos establecen los criterios comunes que deberán respetar todas las disciplinas responsables del diseño detallado, implementación, validación y evolución de BudgetKeep.
@@ -620,7 +701,19 @@ Toda decisión técnica que modifique la Arquitectura Técnica, los estándares 
 
 Los principios, estándares y patrones definidos por la Arquitectura Técnica deberán mantenerse independientes de tecnologías específicas para facilitar la evolución futura de la solución.
 
-La selección de tecnologías corresponderá a las disciplinas especializadas respetando los lineamientos establecidos por este documento.
+La selección de tecnologías de alcance global deberá realizarse mediante el Technology Stack Workshop y formar parte del Official Technology Stack aprobado.
+
+Las decisiones tecnológicas específicas de cada disciplina deberán respetar dicha línea base técnica.
+
+---
+
+## TS-009 Consistencia del Official Technology Stack
+
+Las tecnologías aprobadas como parte del Official Technology Stack deberán utilizarse de forma consistente por todas las disciplinas responsables de la implementación.
+
+Ningún especialista podrá sustituir una tecnología aprobada por otra equivalente sin seguir el proceso formal de gobernanza definido por AI MineSoftware.
+
+Cuando una modificación al Official Technology Stack sea necesaria, ésta deberá justificarse técnicamente, evaluarse por el Project Office y aprobarse antes de incorporarse a la línea base técnica del proyecto.
 
 # 12. Patrones Técnicos
 
@@ -724,7 +817,145 @@ Al momento de la elaboración de la presente Arquitectura Técnica no existen de
 
 Las decisiones que se adopten durante las fases de Diseño de Base de Datos, Desarrollo Backend, Desarrollo Frontend, Infraestructura, Seguridad, DevOps y demás disciplinas técnicas deberán documentarse utilizando la estructura definida en esta sección y someterse al proceso de gobernanza correspondiente antes de formar parte de la línea base técnica del proyecto.
 
-# 14. Estrategia de Trazabilidad Técnica
+---
+
+## 13.3 Relación con el Official Technology Stack
+
+Las decisiones correspondientes al Official Technology Stack deberán registrarse como Technical Decision Records una vez que hayan sido aprobadas mediante el proceso de gobernanza del proyecto.
+
+Cada decisión relacionada con el Technology Stack deberá mantener trazabilidad con:
+
+- el Technology Stack Workshop;
+- la Arquitectura de Solución;
+- la Arquitectura Técnica;
+- los Componentes Técnicos afectados;
+- las disciplinas de implementación involucradas.
+
+El Registro de Decisiones Técnicas constituirá el repositorio oficial para documentar la evolución del Official Technology Stack durante el ciclo de vida del producto.
+
+# 14. Technology Stack Workshop
+
+## 14.1 Propósito
+
+Antes de registrar el Technology Stack oficial del proyecto, la Arquitectura Técnica deberá ejecutar un Technology Stack Workshop.
+
+El propósito del workshop consiste en analizar las alternativas tecnológicas aplicables al proyecto y proponer un Technology Stack consistente con la Arquitectura de Solución, la Arquitectura Técnica y los objetivos del producto.
+
+Las tecnologías seleccionadas durante el workshop tendrán el carácter de propuestas hasta que sean aprobadas mediante el proceso de gobernanza del proyecto.
+
+---
+
+## 14.2 Alcance
+
+El Technology Stack Workshop deberá abarcar todas las decisiones tecnológicas de alcance global para el proyecto.
+
+Entre ellas se incluyen, cuando sean aplicables:
+
+- Lenguaje de programación Backend.
+- Framework Backend.
+- Lenguaje de programación Frontend.
+- Framework Frontend.
+- Motor de Base de Datos.
+- Plataforma Cloud.
+- Estrategia de Hosting.
+- Tecnología de Autenticación.
+- Estilo de APIs.
+- Plataforma de Control de Versiones.
+- Plataforma CI/CD.
+- Estrategia de Contenedores.
+- Plataforma de Monitoreo.
+- Estrategia de Logging.
+- Otras tecnologías transversales del proyecto.
+
+---
+
+## 14.3 Proceso del Workshop
+
+Para cada decisión tecnológica se deberá:
+
+1. Identificar las alternativas viables.
+2. Analizar ventajas y desventajas.
+3. Evaluar el impacto arquitectónico.
+4. Emitir una recomendación técnica.
+5. Obtener la aprobación explícita del Project Owner.
+6. Registrar la decisión aprobada como parte del Technology Stack oficial.
+
+Las decisiones aprobadas durante el workshop deberán reutilizarse de forma consistente durante las fases posteriores del proyecto.
+
+---
+
+## 14.4 Gobernanza
+
+La aprobación de una tecnología global constituye una decisión de línea base técnica.
+
+Toda modificación posterior deberá seguir el proceso formal de gobernanza definido por AI MineSoftware antes de incorporarse al Technology Stack oficial.
+
+# 15. Official Technology Stack
+
+## 15.1 Propósito
+
+El Official Technology Stack constituye el conjunto de tecnologías de alcance global aprobadas para BudgetKeep.
+
+Su propósito consiste en establecer una línea base tecnológica común que deberá ser reutilizada de manera consistente por todas las disciplinas responsables de la implementación del producto.
+
+Las tecnologías incluidas en el Official Technology Stack deberán haber sido previamente analizadas durante el Technology Stack Workshop y aprobadas mediante el proceso de gobernanza del proyecto.
+
+---
+
+## 15.2 Alcance
+
+El Official Technology Stack documenta exclusivamente decisiones tecnológicas de alcance global.
+
+Las decisiones específicas de implementación correspondientes a una Functional Capability o a una disciplina particular no forman parte del Official Technology Stack y deberán documentarse en los artefactos correspondientes.
+
+---
+
+## 15.3 Registro del Official Technology Stack
+
+Las tecnologías aprobadas se documentarán utilizando la siguiente estructura.
+
+**Tabla TA-001-06. Official Technology Stack**
+
+| Categoría | Tecnología Aprobada | Versión | Estado | Observaciones |
+|-----------|---------------------|----------|--------|---------------|
+
+| Backend Programming Language | Python | 3.x LTS | Approved | Aprobado durante el Technology Stack Workshop |
+
+| Backend Framework | FastAPI | Compatible con Python 3.x LTS | Approved | Aprobado durante el Technology Stack Workshop |
+
+| Frontend Programming Language | TypeScript | 5.x LTS | Approved | Aprobado durante el Technology Stack Workshop |
+
+| Frontend Framework | React | 19.x LTS | Approved | Aprobado durante el Technology Stack Workshop |
+
+| Database Engine | Azure SQL Database | Free Tier (Serverless) | Approved | Servicio relacional administrado en Azure. Seleccionado por su integración con la plataforma MineKeep, escalabilidad, administración simplificada y compatibilidad con la estrategia Cloud First. |
+
+| Cloud Platform | Microsoft Azure | General Availability (GA) | Approved | Plataforma cloud oficial del proyecto. |
+
+| Hosting Strategy | Azure App Service | General Availability (GA) | Approved | Estrategia oficial de hospedaje para los componentes de la aplicación. |
+
+| Authentication Technology | Microsoft Entra External ID | General Availability (GA) | Approved | Plataforma oficial de autenticación e identidad para los usuarios de BudgetKeep. |
+
+| API Style | REST API | RESTful | Approved | Estilo oficial para la exposición y consumo de servicios entre el Frontend y el Backend, así como para futuras integraciones externas. |
+
+| Version Control Platform | GitHub | Current Stable Release | Approved | Plataforma oficial para el control de versiones, colaboración y administración del código fuente del proyecto. |
+
+| CI/CD Platform | GitHub Actions | Current Stable Release | Approved | Plataforma oficial para la automatización de los procesos de integración continua y despliegue continuo del proyecto. |
+
+| Container Strategy | Container Ready | Docker Compatible | Approved | La arquitectura deberá mantenerse compatible con una futura estrategia basada en contenedores. La contenerización podrá adoptarse en versiones posteriores sin requerir cambios significativos en la arquitectura de la solución. |
+
+| Monitoring Platform | Azure Monitor | General Availability (GA) | Approved | Plataforma oficial para el monitoreo de la infraestructura, aplicaciones y servicios del proyecto. |
+
+| Logging Strategy | Azure Monitor Logs | General Availability (GA) | Approved | Estrategia oficial para la recopilación, almacenamiento y consulta centralizada de los registros del proyecto. |
+
+---
+
+## 15.4 Gobernanza del Technology Stack
+
+Una vez aprobado, el Official Technology Stack pasará a formar parte de la línea base técnica del proyecto.
+
+Las disciplinas responsables de la implementación deberán reutilizar dichas tecnologías y no podrán sustituirlas sin una aprobación formal del Project Office mediante el proceso de gobernanza establecido por AI MineSoftware.
+
+# 16. Estrategia de Trazabilidad Técnica
 
 La Arquitectura Técnica constituye el vínculo entre la Arquitectura de Solución y las disciplinas responsables del diseño detallado, implementación, validación y evolución de BudgetKeep.
 
@@ -734,7 +965,7 @@ Toda implementación deberá poder relacionarse con los artefactos definidos por
 
 ---
 
-## 14.1 Niveles de Trazabilidad
+## 16.1 Niveles de Trazabilidad
 
 La trazabilidad técnica deberá preservar la relación entre los siguientes niveles del proyecto:
 
@@ -746,6 +977,7 @@ La trazabilidad técnica deberá preservar la relación entre los siguientes niv
 - Functional Requirements (FR)
 - Architectural Components (AC)
 - Technical Components (TC)
+- Official Technology Stack
 - Disciplina Técnica Responsable
 - Implementación
 
@@ -753,7 +985,7 @@ Esta estructura permitirá realizar análisis de impacto, facilitar la evolució
 
 ---
 
-## 14.2 Trazabilidad entre Arquitectura de Solución y Arquitectura Técnica
+## 16.2 Trazabilidad entre Arquitectura de Solución y Arquitectura Técnica
 
 Cada Componente Arquitectónico podrá implementarse mediante uno o varios Componentes Técnicos.
 
@@ -763,7 +995,7 @@ Esta relación preserva la separación entre la organización lógica de la solu
 
 ---
 
-## 14.3 Trazabilidad hacia las Disciplinas Técnicas
+## 16.3 Trazabilidad hacia las Disciplinas Técnicas
 
 Los Componentes Técnicos constituyen el punto de referencia que utilizarán las disciplinas responsables del diseño detallado y la implementación del producto.
 
@@ -781,7 +1013,7 @@ Entre otras, las disciplinas involucradas incluyen:
 
 ---
 
-## 14.4 Matriz de Trazabilidad Técnica
+## 16.4 Matriz de Trazabilidad Técnica
 
 La matriz de trazabilidad técnica será desarrollada y mantenida durante las fases posteriores del proyecto.
 
@@ -789,7 +1021,7 @@ Su propósito consistirá en documentar la relación entre los distintos niveles
 
 La matriz deberá mantenerse actualizada durante toda la evolución del producto y formar parte de la documentación oficial del proyecto.
 
-# 15. Riesgos Técnicos
+# 17. Riesgos Técnicos
 
 La presente Arquitectura Técnica identifica los principales riesgos que podrían comprometer la correcta implementación, evolución y mantenimiento de BudgetKeep.
 
@@ -805,16 +1037,18 @@ La identificación temprana de estos riesgos permitirá que las disciplinas téc
 | TRK-004 | Acoplamiento excesivo entre Componentes Técnicos. | Medio | Respetar el modelo de dependencias definido por la Arquitectura Técnica y evitar dependencias innecesarias. |
 | TRK-005 | Incorporación de decisiones técnicas incompatibles con la línea base aprobada. | Alto | Someter toda decisión técnica relevante al proceso de gobernanza establecido por AI MineSoftware antes de su incorporación a la línea base técnica. |
 | TRK-006 | Inconsistencia entre las implementaciones realizadas por distintas disciplinas técnicas. | Medio | Aplicar los estándares, principios y patrones definidos por la Arquitectura Técnica como referencia común para todas las disciplinas. |
+| TRK-007 | Selección de un Technology Stack incompatible con la Arquitectura de Solución o la Arquitectura Técnica. | Alto | Validar todas las tecnologías mediante el Technology Stack Workshop y someter su aprobación al proceso formal de gobernanza antes de incorporarlas al Official Technology Stack. |
+| TRK-008 | Modificaciones no autorizadas al Official Technology Stack durante la implementación. | Alto | Toda modificación al Official Technology Stack deberá seguir el proceso formal de gobernanza y actualizar el Registro de Decisiones Técnicas antes de su utilización. |
 
 Los riesgos identificados deberán revisarse durante las siguientes fases del proyecto con el propósito de asegurar que las decisiones técnicas permanezcan alineadas con la Arquitectura Técnica aprobada y con la evolución del producto.
 
-# 16. Conclusiones
+# 18. Conclusiones
 
 La presente Arquitectura Técnica transforma la Arquitectura de Solución aprobada en un marco técnico común que guiará las disciplinas responsables del diseño detallado, implementación, validación y evolución de BudgetKeep.
 
 La Arquitectura Técnica preserva la separación entre las decisiones de negocio, las decisiones arquitectónicas y las decisiones técnicas, proporcionando una organización técnica consistente que permitirá implementar la solución sin modificar la línea base aprobada del proyecto.
 
-El presente documento establece la organización técnica general de la solución, los Componentes Técnicos, sus responsabilidades, sus relaciones, los principios técnicos, los estándares, los patrones, las restricciones y los mecanismos de trazabilidad que deberán respetarse durante las siguientes fases del proyecto.
+El presente documento establece la organización técnica general de la solución, la Arquitectura Física, los Componentes Técnicos, sus responsabilidades, sus relaciones, los principios técnicos, los estándares, los patrones, las restricciones, la estrategia de comunicación técnica, la estrategia de integración, la estrategia de APIs, el Technology Stack oficial, el Registro de Decisiones Técnicas y los mecanismos de trazabilidad que deberán respetarse durante las siguientes fases del proyecto.
 
 La Arquitectura Técnica no constituye un documento de implementación.
 
@@ -837,6 +1071,8 @@ Las disciplinas técnicas utilizarán como línea base los siguientes elementos 
 - Estándares Técnicos.
 - Patrones Técnicos.
 - Registro de Decisiones Técnicas.
+- Technology Stack Workshop.
+- Official Technology Stack.
 - Estrategia de Trazabilidad Técnica.
 - Riesgos Técnicos.
 

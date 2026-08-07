@@ -9,6 +9,7 @@ Sección 1. Document Information
 | Document Type | Methodology Specification |
 | Owner | Project Office |
 | Status | Approved |
+| Version | 1.1 | 
 
 Sección 2. Introduction
 # 2. Introduction
@@ -214,11 +215,44 @@ Define the physical organization of the solution, including logical deployment s
 
 ## 5.3 Technology Strategy
 
-Select and justify the technologies required to implement the solution while preserving the approved Solution Architecture.
+Define the technology strategy required to implement the approved Solution Architecture.
+
+Evaluate suitable technology alternatives, document their technical rationale and recommend the most appropriate technologies for the project while preserving the approved architectural baseline.
+
+The Technology Strategy provides the foundation for establishing the Official Technology Stack of the project.
+---
+
+## 5.4 Official Technology Stack
+
+The Technical Architecture Expert is responsible for defining the proposed Official Technology Stack of the project.
+
+The Technology Stack establishes the global technology decisions that shall be shared by every implementation discipline.
+
+Before becoming part of the approved project baseline, the proposed Technology Stack shall be reviewed and approved through the project's governance process.
+
+Once approved, these decisions shall be reused by all subsequent specialists and shall not be redefined unless a formal governance process authorizes the change.
+
+The Official Technology Stack may include, among others:
+
+- Backend programming language
+- Backend framework
+- Frontend programming language
+- Frontend framework
+- Database engine
+- Cloud platform
+- Hosting strategy
+- Authentication technology
+- API style
+- Version control platform
+- CI/CD platform
+- Container strategy
+- Monitoring platform
+- Logging strategy
+- Additional project-wide technologies when applicable.
 
 ---
 
-## 5.4 Technical Standards
+## 5.5 Technical Standards
 
 Define the technical standards that shall govern implementation.
 
@@ -226,13 +260,13 @@ These standards shall remain consistent across every Functional Capability.
 
 ---
 
-## 5.5 Technical Patterns
+## 5.6 Technical Patterns
 
 Define the architectural and software patterns required to implement the solution consistently.
 
 ---
 
-## 5.6 Technical Communication
+## 5.7 Technical Communication
 
 Define how architectural components communicate from a technical perspective.
 
@@ -240,19 +274,19 @@ This includes communication styles, contracts and integration strategies.
 
 ---
 
-## 5.7 API Strategy
+## 5.8 API Strategy
 
 Define the technical strategy governing APIs without implementing individual endpoints.
 
 ---
 
-## 5.8 Integration Strategy
+## 5.9 Integration Strategy
 
 Define the technical mechanisms used to integrate architectural components and external systems.
 
 ---
 
-## 5.9 Cross-Cutting Concerns
+## 5.10 Cross-Cutting Concerns
 
 Define the technical architecture for:
 
@@ -269,13 +303,13 @@ Define the technical architecture for:
 
 ---
 
-## 5.10 Technical Traceability
+## 5.11 Technical Traceability
 
 Maintain complete traceability between Solution Architecture artifacts and Technical Architecture artifacts.
 
 ---
 
-## 5.11 Incremental Technical Architecture
+## 5.12 Incremental Technical Architecture
 
 Produce the Technical Architecture incrementally using Functional Capabilities as the official implementation unit.
 
@@ -377,6 +411,26 @@ Ensure complete traceability between:
 Collaborate with the Project Office during governance reviews.
 
 Explain technical decisions and resolve governance observations without modifying the approved architectural baseline unless formally authorized.
+
+## 6.12 Technology Stack Workshop
+
+Before producing the Technical Architecture, the Technical Architecture Expert shall conduct a structured Technology Stack Workshop with the Project Owner.
+
+The purpose of the workshop is to define the proposed Official Technology Stack of the project through informed architectural decisions.
+
+For each global technology decision, the Technical Architecture Expert shall:
+
+- Present the available alternatives.
+- Explain the architectural advantages and disadvantages.
+- Describe the impact of each alternative on the project.
+- Recommend the most appropriate option based on the approved Solution Architecture.
+- Request explicit approval from the Project Owner before recording the decision.
+
+Each approved technology shall become part of the proposed Official Technology Stack.
+
+Once approved through the project's governance process, the Official Technology Stack shall become part of the project baseline and shall be reused by all subsequent implementation specialists.
+
+The Technology Stack Workshop shall be completed before the Core Technical Architecture is finalized.
 
 # 7. Out of Scope
 
@@ -577,6 +631,8 @@ Each decision shall include:
 - consequences;
 - affected components;
 - traceability.
+
+The approved Official Technology Stack shall be documented as part of the Technical Decision Records.
 
 ---
 
