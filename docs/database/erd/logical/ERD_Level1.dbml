@@ -1,0 +1,199 @@
+// ========================================================== 
+// BudgetKeep 
+// Entity Relationship Diagram (ERD) 
+// Level 1 - Logical Data Model 
+// 
+// Domain: 
+// Identity & Security 
+// ========================================================== 
+ 
+Table User { 
+  UserId bigint [pk] 
+  SupportId varchar [not null, unique] 
+  Username varchar [not null, unique] 
+  Email varchar [not null, unique] 
+  FirstName varchar [not null] 
+  LastName varchar [not null] 
+  PhoneNumber varchar [not null] 
+  IsActive boolean [not null] 
+  CreatedAt datetime 
+  CreatedBy bigint 
+  UpdatedAt datetime 
+  UpdatedBy bigint 
+  DeletedAt datetime 
+  DeletedBy bigint 
+} 
+ 
+Table UserSecurity { 
+  UserId bigint [pk] 
+  PasswordHash varchar [not null] 
+  FailedLoginAttempts int [not null] 
+  LockoutUntil datetime 
+  LockoutCount int [not null] 
+  LockoutWindowStart datetime 
+  LastLoginDate datetime 
+  PasswordChangedDate datetime 
+  RequiresSupport boolean [not null] 
+} 
+ 
+Table Role { 
+  RoleId bigint [pk] 
+  Code varchar [not null, unique] 
+  Name varchar [not null] 
+  Description varchar 
+  IsSystemRole boolean [not null] 
+  IsActive boolean [not null] 
+  CreatedAt datetime 
+  CreatedBy bigint 
+  UpdatedAt datetime 
+  UpdatedBy bigint 
+  DeletedAt datetime 
+  DeletedBy bigint 
+} 
+ 
+Table Module { 
+  ModuleId bigint [pk] 
+  Code varchar [not null, unique] 
+  Name varchar [not null] 
+  Description varchar 
+  IsActive boolean [not null] 
+  CreatedAt datetime 
+  CreatedBy bigint 
+  UpdatedAt datetime 
+  UpdatedBy bigint 
+  DeletedAt datetime 
+  DeletedBy bigint 
+} 
+ 
+Table Permission { 
+  PermissionId bigint [pk] 
+  Code varchar [not null, unique] 
+  Name varchar [not null] 
+  Description varchar 
+  IsActive boolean [not null] 
+  CreatedAt datetime 
+  CreatedBy bigint 
+  UpdatedAt datetime 
+  UpdatedBy bigint 
+  DeletedAt datetime 
+  DeletedBy bigint 
+} 
+ 
+Table ModulePermission { 
+  ModuleId bigint [pk] 
+  PermissionId bigint [pk] 
+  IsActive boolean [not null] 
+  CreatedAt datetime 
+  CreatedBy bigint 
+  UpdatedAt datetime 
+  UpdatedBy bigint 
+  DeletedAt datetime 
+  DeletedBy bigint 
+} 
+ 
+Table UserRole { 
+  UserId bigint [pk] 
+  RoleId bigint [pk] 
+  CreatedAt datetime 
+  CreatedBy bigint 
+  UpdatedAt datetime 
+  UpdatedBy bigint 
+} 
+ 
+Table RolePermission { 
+  RoleId bigint [pk] 
+  ModuleId bigint [pk] 
+  PermissionId bigint [pk] 
+  CreatedAt datetime 
+  CreatedBy bigint 
+  UpdatedAt datetime 
+  UpdatedBy bigint 
+} 
+ 
+Table UserPreference { 
+  UserId bigint [pk] 
+  LanguageCode varchar 
+  Theme varchar 
+  DateFormat varchar 
+  TimeZone varchar 
+  CreatedAt datetime 
+  UpdatedAt datetime 
+} 
+ 
+Table SystemConfiguration { 
+  SystemConfigurationId bigint [pk] 
+  Code varchar [not null, unique] 
+  Value varchar [not null] 
+  ConfigurationDataTypeId bigint [not null] 
+  Description varchar [not null] 
+  IsActive boolean [not null] 
+  CreatedAt datetime 
+  CreatedBy bigint 
+  UpdatedAt datetime 
+  UpdatedBy bigint 
+} 
+ 
+Table ConfigurationDataType { 
+  ConfigurationDataTypeId bigint [pk] 
+  Code varchar [not null, unique] 
+  Name varchar [not null] 
+  Description varchar 
+  IsActive boolean [not null] 
+  CreatedAt datetime 
+  CreatedBy bigint 
+  UpdatedAt datetime 
+  UpdatedBy bigint 
+} 
+ 
+ 
+// Relaciones funcionales 
+ 
+Ref: UserSecurity.UserId - User.UserId 
+ 
+Ref: UserPreference.UserId - User.UserId 
+ 
+Ref: UserRole.UserId > User.UserId 
+Ref: UserRole.RoleId > Role.RoleId 
+ 
+Ref: ModulePermission.ModuleId > Module.ModuleId 
+Ref: ModulePermission.PermissionId > Permission.PermissionId 
+ 
+Ref: RolePermission.RoleId > Role.RoleId 
+Ref: RolePermission.(ModuleId, PermissionId) > ModulePermission.(ModuleId, PermissionId) 
+ 
+Ref: SystemConfiguration.ConfigurationDataTypeId > ConfigurationDataType.ConfigurationDataTypeId 
+ 
+ 
+// Relaciones técnicas de auditoría 
+ 
+Ref: User.CreatedBy > User.UserId 
+Ref: User.UpdatedBy > User.UserId 
+Ref: User.DeletedBy > User.UserId 
+ 
+Ref: Role.CreatedBy > User.UserId 
+Ref: Role.UpdatedBy > User.UserId 
+Ref: Role.DeletedBy > User.UserId 
+ 
+Ref: Module.CreatedBy > User.UserId 
+Ref: Module.UpdatedBy > User.UserId 
+Ref: Module.DeletedBy > User.UserId 
+ 
+Ref: Permission.CreatedBy > User.UserId 
+Ref: Permission.UpdatedBy > User.UserId 
+Ref: Permission.DeletedBy > User.UserId 
+ 
+Ref: ModulePermission.CreatedBy > User.UserId 
+Ref: ModulePermission.UpdatedBy > User.UserId 
+Ref: ModulePermission.DeletedBy > User.UserId 
+ 
+Ref: UserRole.CreatedBy > User.UserId 
+Ref: UserRole.UpdatedBy > User.UserId 
+ 
+Ref: RolePermission.CreatedBy > User.UserId 
+Ref: RolePermission.UpdatedBy > User.UserId 
+ 
+Ref: SystemConfiguration.CreatedBy > User.UserId 
+Ref: SystemConfiguration.UpdatedBy > User.UserId 
+ 
+Ref: ConfigurationDataType.CreatedBy > User.UserId 
+Ref: ConfigurationDataType.UpdatedBy > User.UserId

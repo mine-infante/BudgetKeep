@@ -1,0 +1,14 @@
+{
+  "dbml": {
+    "entry": "docs/database/erd/logical/ERD_Level1.dbml"
+  },
+  "diagram": {
+    "id": "6a7894ca829f06bdc8b2a052",
+    "workspaceId": ""
+  },
+  "document": {
+    "source": "file",
+    "workspaceUrlName": "",
+    "projectUrlName": ""
+  }
+}

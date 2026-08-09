@@ -1,0 +1,747 @@
+{
+  "version": "2.0.0",
+  "darkMode": false,
+  "gridEnabling": false,
+  "currentViewName": null,
+  "defaultView": {
+    "detailLevel": "All",
+    "tablePositions": [
+      {
+        "name": "User",
+        "schemaName": "public",
+        "x": 12,
+        "y": 162
+      },
+      {
+        "name": "Role",
+        "schemaName": "public",
+        "x": 12,
+        "y": 272
+      },
+      {
+        "name": "Module",
+        "schemaName": "public",
+        "x": 12,
+        "y": 382
+      },
+      {
+        "name": "Permission",
+        "schemaName": "public",
+        "x": 12,
+        "y": 492
+      },
+      {
+        "name": "ModulePermission",
+        "schemaName": "public",
+        "x": 506.49365234375,
+        "y": 479
+      },
+      {
+        "name": "UserRole",
+        "schemaName": "public",
+        "x": 506.49365234375,
+        "y": 304
+      },
+      {
+        "name": "RolePermission",
+        "schemaName": "public",
+        "x": 1009.7119140625,
+        "y": 162
+      },
+      {
+        "name": "UserPreference",
+        "schemaName": "public",
+        "x": 506.49365234375,
+        "y": 162
+      },
+      {
+        "name": "TestTable",
+        "schemaName": "public",
+        "x": 12,
+        "y": 12
+      },
+      {
+        "name": "UserSecurity",
+        "schemaName": "public",
+        "x": 12,
+        "y": 926
+      },
+      {
+        "name": "SystemConfiguration",
+        "schemaName": "public",
+        "x": 333.51904296875,
+        "y": 926
+      },
+      {
+        "name": "ConfigurationDataType",
+        "schemaName": "public",
+        "x": 699.06787109375,
+        "y": 926
+      }
+    ],
+    "tableGroupCollapseStates": [],
+    "stickyNoteLayouts": [],
+    "referencePaths": [
+      {
+        "firstFieldNames": [
+          "UserId"
+        ],
+        "firstTableName": "User",
+        "firstSchemaName": "public",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "UserRole",
+        "secondSchemaName": "public",
+        "secondRelation": "*",
+        "checkPoints": [
+          {
+            "x": 371.18961138701326,
+            "y": 210
+          },
+          {
+            "x": 371.18961138701326,
+            "y": 352
+          }
+        ]
+      },
+      {
+        "firstFieldNames": [
+          "RoleId"
+        ],
+        "firstTableName": "Role",
+        "firstSchemaName": "public",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "RoleId"
+        ],
+        "secondTableName": "UserRole",
+        "secondSchemaName": "public",
+        "secondRelation": "*",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "RoleId"
+        ],
+        "firstTableName": "Role",
+        "firstSchemaName": "public",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "RoleId"
+        ],
+        "secondTableName": "RolePermission",
+        "secondSchemaName": "public",
+        "secondRelation": "*",
+        "checkPoints": [
+          {
+            "x": 176.80908203125,
+            "y": 292.0199459210114
+          },
+          {
+            "x": 583.260498046875,
+            "y": 292.0199459210114
+          },
+          {
+            "x": 583.260498046875,
+            "y": 263.8077963057476
+          },
+          {
+            "x": 989.7119140625,
+            "y": 263.8077963057476
+          }
+        ]
+      },
+      {
+        "firstFieldNames": [
+          "ModuleId"
+        ],
+        "firstTableName": "Module",
+        "firstSchemaName": "public",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "ModuleId"
+        ],
+        "secondTableName": "ModulePermission",
+        "secondSchemaName": "public",
+        "secondRelation": "*",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "PermissionId"
+        ],
+        "firstTableName": "Permission",
+        "firstSchemaName": "public",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "PermissionId"
+        ],
+        "secondTableName": "ModulePermission",
+        "secondSchemaName": "public",
+        "secondRelation": "*",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "UserId"
+        ],
+        "firstTableName": "User",
+        "firstSchemaName": "public",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "UserPreference",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": [
+          {
+            "x": 178.40234375,
+            "y": 186.32456962547116
+          },
+          {
+            "x": 486.49365234375,
+            "y": 186.32456962547116
+          }
+        ]
+      },
+      {
+        "firstFieldNames": [
+          "ModuleId",
+          "PermissionId"
+        ],
+        "firstTableName": "ModulePermission",
+        "firstSchemaName": "public",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "ModuleId",
+          "PermissionId"
+        ],
+        "secondTableName": "RolePermission",
+        "secondSchemaName": "public",
+        "secondRelation": "*",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "UserId"
+        ],
+        "firstTableName": "UserSecurity",
+        "firstSchemaName": "public",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "UserId"
+        ],
+        "firstTableName": "UserPreference",
+        "firstSchemaName": "public",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": [
+          {
+            "x": 486.49365234375,
+            "y": 186.32456962547116
+          },
+          {
+            "x": 178.40234375,
+            "y": 186.32456962547116
+          }
+        ]
+      },
+      {
+        "firstFieldNames": [
+          "UserId"
+        ],
+        "firstTableName": "UserRole",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": [
+          {
+            "x": 371.18961138701326,
+            "y": 352
+          },
+          {
+            "x": 371.18961138701326,
+            "y": 210
+          }
+        ]
+      },
+      {
+        "firstFieldNames": [
+          "RoleId"
+        ],
+        "firstTableName": "UserRole",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "RoleId"
+        ],
+        "secondTableName": "Role",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "ModuleId"
+        ],
+        "firstTableName": "ModulePermission",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "ModuleId"
+        ],
+        "secondTableName": "Module",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "PermissionId"
+        ],
+        "firstTableName": "ModulePermission",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "PermissionId"
+        ],
+        "secondTableName": "Permission",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "RoleId"
+        ],
+        "firstTableName": "RolePermission",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "RoleId"
+        ],
+        "secondTableName": "Role",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": [
+          {
+            "x": 989.7119140625,
+            "y": 263.8077963057476
+          },
+          {
+            "x": 583.260498046875,
+            "y": 263.8077963057476
+          },
+          {
+            "x": 583.260498046875,
+            "y": 292.0199459210114
+          },
+          {
+            "x": 176.80908203125,
+            "y": 292.0199459210114
+          }
+        ]
+      },
+      {
+        "firstFieldNames": [
+          "ModuleId",
+          "PermissionId"
+        ],
+        "firstTableName": "RolePermission",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "ModuleId",
+          "PermissionId"
+        ],
+        "secondTableName": "ModulePermission",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "ConfigurationDataTypeId"
+        ],
+        "firstTableName": "SystemConfiguration",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "ConfigurationDataTypeId"
+        ],
+        "secondTableName": "ConfigurationDataType",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "CreatedBy"
+        ],
+        "firstTableName": "User",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "UpdatedBy"
+        ],
+        "firstTableName": "User",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "DeletedBy"
+        ],
+        "firstTableName": "User",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "CreatedBy"
+        ],
+        "firstTableName": "Role",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "UpdatedBy"
+        ],
+        "firstTableName": "Role",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "DeletedBy"
+        ],
+        "firstTableName": "Role",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "CreatedBy"
+        ],
+        "firstTableName": "Module",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "UpdatedBy"
+        ],
+        "firstTableName": "Module",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "DeletedBy"
+        ],
+        "firstTableName": "Module",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "CreatedBy"
+        ],
+        "firstTableName": "Permission",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "UpdatedBy"
+        ],
+        "firstTableName": "Permission",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "DeletedBy"
+        ],
+        "firstTableName": "Permission",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "CreatedBy"
+        ],
+        "firstTableName": "ModulePermission",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "UpdatedBy"
+        ],
+        "firstTableName": "ModulePermission",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "DeletedBy"
+        ],
+        "firstTableName": "ModulePermission",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "CreatedBy"
+        ],
+        "firstTableName": "UserRole",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "UpdatedBy"
+        ],
+        "firstTableName": "UserRole",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "CreatedBy"
+        ],
+        "firstTableName": "RolePermission",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "UpdatedBy"
+        ],
+        "firstTableName": "RolePermission",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "CreatedBy"
+        ],
+        "firstTableName": "SystemConfiguration",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "UpdatedBy"
+        ],
+        "firstTableName": "SystemConfiguration",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "CreatedBy"
+        ],
+        "firstTableName": "ConfigurationDataType",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "UpdatedBy"
+        ],
+        "firstTableName": "ConfigurationDataType",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "UserId"
+        ],
+        "secondTableName": "User",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      }
+    ]
+  },
+  "views": {}
+}
