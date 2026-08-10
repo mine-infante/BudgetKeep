@@ -397,6 +397,236 @@ Las secciones posteriores desarrollarán de manera detallada la organización f�
 
 Cada uno de estos elementos será acompañado por los artefactos técnicos necesarios para su implementación y validación.
 
+## 6.6 Decisiones Físicas Aprobadas
+
+Las siguientes decisiones constituyen la línea base física aprobada hasta esta etapa del diseño de BudgetKeep. Estas decisiones deberán ser reutilizadas por el Modelo Físico, los scripts SQL, los scripts de Rollback, los scripts Seed, la implementación en Azure SQL Database y la validación del dominio.
+
+### 6.6.1 Identificadores y esquema
+
+* Los identificadores de las entidades con Primary Key simple utilizarán `BIGINT IDENTITY(1,1)`.
+* Las entidades puente con Primary Key compuesta conservarán las claves compuestas definidas por el Modelo Lógico.
+* Las entidades 1:1 que utilizan el identificador de su entidad propietaria conservarán dicho identificador como Primary Key y Foreign Key.
+* Los identificadores persistentes son internos y no constituyen identificadores funcionales o públicos.
+* El esquema físico inicial de BudgetKeep será `dbo`.
+
+### 6.6.2 Tipos de datos físicos
+
+* Identificadores: `BIGINT`.
+* Valores booleanos: `BIT`.
+* Fechas y horas: `DATETIME2(3)`.
+* Códigos técnicos: `VARCHAR(50)`.
+* Username: `VARCHAR(100)`.
+* Email: `VARCHAR(254)`.
+* SupportId: `VARCHAR(32)`.
+* PhoneNumber: `VARCHAR(30)`.
+* PasswordHash: `VARCHAR(255)`.
+* FirstName: `NVARCHAR(100)`.
+* LastName: `NVARCHAR(150)`.
+* Name: `NVARCHAR(150)`.
+* Description: `NVARCHAR(500)`.
+* SystemConfiguration.Value: `NVARCHAR(500)`.
+* No se utilizarán `VARCHAR(MAX)` o `NVARCHAR(MAX)` en este dominio sin una justificación técnica específica.
+
+### 6.6.3 Identidad de usuario y SupportId
+
+* `Username` representa el identificador de login del usuario de BudgetKeep y es independiente de las identidades administrativas utilizadas para acceder a Azure, Azure SQL u otros servicios de infraestructura.
+* `Username` será obligatorio y único dentro del sistema.
+* `SupportId` será obligatorio, único, estable durante la vida de la cuenta y no podrá reutilizarse para otro usuario.
+* `SupportId` será un identificador opaco generado por el Backend y almacenado como `VARCHAR(32)`.
+* La generación de `SupportId` no dependerá de `UserId` ni de un valor generado por `IDENTITY`.
+* `SupportId` no constituye un mecanismo de autenticación ni de verificación de identidad.
+
+### 6.6.4 Fechas, auditoría y UTC
+
+* Los timestamps persistentes se almacenarán como `DATETIME2(3)` en UTC.
+* `CreatedAt` será `NOT NULL` y utilizará `DEFAULT SYSUTCDATETIME()`.
+* `UpdatedAt` será nullable y no tendrá default.
+* `DeletedAt` será nullable y no tendrá default cuando la entidad implemente eliminación lógica.
+* `CreatedBy`, `UpdatedBy` y `DeletedBy`, cuando estén presentes, serán `BIGINT NULL` y referenciarán `User.UserId`.
+* Los campos de auditoría podrán ser `NULL` durante inicialización, migración o procesos técnicos sin usuario autenticado.
+* El primer usuario podrá crearse con sus atributos de auditoría en `NULL`.
+* No se utilizarán triggers para implementar la auditoría estándar. El Backend será responsable de proporcionar el contexto del usuario y actualizar `UpdatedAt`, `UpdatedBy`, `DeletedAt` y `DeletedBy` cuando corresponda.
+* No se agregará `IsDeleted`; `DeletedAt` representa la eliminación lógica.
+* `IsActive` y `DeletedAt` representan conceptos diferentes y permanecerán independientes.
+
+### 6.6.5 Valores por defecto
+
+Los defaults físicos aprobados son:
+
+| Atributo / Familia    | Default            |
+| --------------------- | ------------------ |
+| `CreatedAt`           | `SYSUTCDATETIME()` |
+| `IsActive`            | `1`                |
+| `IsSystemRole`        | `0`                |
+| `FailedLoginAttempts` | `0`                |
+| `LockoutCount`        | `0`                |
+| `RequiresSupport`     | `0`                |
+
+Los atributos temporales de estado de seguridad, como `LockoutUntil`, `LockoutWindowStart`, `LastLoginDate` y `PasswordChangedDate`, permanecerán `NULL` hasta que exista un valor aplicable.
+
+### 6.6.6 Constraints e integridad
+
+* Las Primary Keys serán definidas en todas las entidades.
+* Las restricciones `UNIQUE` se implementarán para `Username`, `Email`, `SupportId` y los `Code` definidos como únicos por el Modelo Lógico.
+* Los contadores `FailedLoginAttempts` y `LockoutCount` tendrán restricciones `CHECK` que impidan valores menores que cero.
+* `UserSecurity.RequiresSupport = 1` implicará físicamente `LockoutUntil IS NULL` mediante una restricción `CHECK`.
+* No se implementarán mediante `CHECK` los límites dinámicos de la política de seguridad ni la lógica temporal de bloqueo.
+* No se utilizarán `CHECK` para validar formatos de Email, Username, PhoneNumber u otros datos personales, salvo decisión física específica posterior.
+* `SystemConfiguration.Value` no tendrá validación dinámica de tipo mediante `CHECK`; `ConfigurationDataTypeId` garantizará la referencia a un tipo válido y la interpretación del valor corresponderá a la aplicación.
+* `IsActive` y `DeletedAt` no tendrán una relación física obligatoria entre sí.
+
+### 6.6.7 Foreign Keys y comportamiento referencial
+
+* Todas las Foreign Keys utilizarán `ON DELETE NO ACTION`.
+* Todas las Foreign Keys utilizarán `ON UPDATE NO ACTION`.
+* Los identificadores serán considerados estables y no se actualizarán durante la vida del registro.
+* No se utilizará `CASCADE DELETE` en este dominio.
+* Las relaciones `User → UserSecurity` y `User → UserPreference` no tendrán cascada.
+* Las relaciones de autorización entre `Role`, `Module`, `Permission`, `ModulePermission`, `UserRole` y `RolePermission` no tendrán cascada.
+* `ConfigurationDataType → SystemConfiguration` no tendrá cascada.
+* `Language → UserPreference` y `TimeZone → UserPreference` no tendrán cascada.
+* Las Foreign Keys de auditoría hacia `User.UserId` utilizarán `NO ACTION`.
+* La relación 1:1 obligatoria entre `User` y `UserSecurity` se garantiza mediante la combinación de Primary Key/Foreign Key y el proceso transaccional de creación del usuario. La Foreign Key por sí sola no garantiza la existencia del registro dependiente para cada usuario.
+
+### 6.6.8 Índices
+
+* Las Primary Keys proporcionarán los índices correspondientes.
+* Las restricciones `UNIQUE` proporcionarán los índices únicos necesarios.
+* Se crearán los siguientes índices secundarios justificados por los patrones de acceso inverso de las relaciones N:N:
+
+  * `IX_UserRole_RoleId` sobre `UserRole(RoleId)`.
+  * `IX_ModulePermission_PermissionId` sobre `ModulePermission(PermissionId)`.
+  * `IX_RolePermission_ModulePermission` sobre `RolePermission(ModuleId, PermissionId)`.
+* No se crearán índices adicionales sobre atributos de seguridad, auditoría, preferencias o configuración sin una necesidad funcional o de rendimiento justificada.
+* La estrategia de índices podrá evolucionar posteriormente con evidencia de consultas reales y validación de rendimiento.
+
+### 6.6.9 Convención de nombres de constraints
+
+Las restricciones físicas utilizarán las siguientes convenciones:
+
+* Primary Key: `PK_<Table>`.
+* Foreign Key: `FK_<Table>_<ReferencedTable>`.
+* Unique: `UQ_<Table>_<Column>`.
+* Check: `CK_<Table>_<Column>`.
+* Default: `DF_<Table>_<Column>`.
+
+### 6.6.10 Orden de creación del esquema
+
+Para permitir una construcción reproducible desde una base limpia y evitar deshabilitar integridad referencial, el orden base de creación será:
+
+1. `User`
+2. `Role`
+3. `Module`
+4. `Permission`
+5. `ConfigurationDataType`
+6. `Language`
+7. `TimeZone`
+8. `UserSecurity`
+9. `UserPreference`
+10. `SystemConfiguration`
+11. `ModulePermission`
+12. `UserRole`
+13. `RolePermission`
+
+La tabla `User` se creará inicialmente con sus columnas de auditoría, pero las Foreign Keys autorreferenciadas `CreatedBy`, `UpdatedBy` y `DeletedBy` se agregarán posteriormente mediante `ALTER TABLE`.
+
+No se deshabilitarán constraints durante la creación normal del esquema.
+
+Las Foreign Keys que dependan de tablas ya creadas se agregarán una vez disponibles sus objetos referenciados. Los índices secundarios se crearán después de disponer de las tablas y relaciones correspondientes.
+
+### 6.6.11 Secuencia de ejecución de scripts
+
+La implementación física del dominio deberá seguir una secuencia reproducible y explícita.
+
+El orden lógico de ejecución será:
+
+1. Preparación de schema y prerrequisitos de base de datos, cuando sean necesarios.
+2. Creación de tablas.
+3. Creación de Primary Keys, restricciones `UNIQUE`, `CHECK` y `DEFAULT` que formen parte de la estructura de cada tabla.
+4. Creación de Foreign Keys, incluyendo las Foreign Keys autorreferenciadas de `User` mediante `ALTER TABLE` cuando corresponda.
+5. Creación de índices secundarios.
+6. Ejecución de Seed Data.
+7. Ejecución de validaciones estructurales y de integridad.
+8. Validación de reproducibilidad desde una base limpia.
+
+La secuencia de ejecución de scripts deberá respetar las dependencias establecidas en el Modelo Físico y no deberá depender de ejecuciones manuales intermedias.
+
+La estructura definitiva de archivos y directorios de scripts se definirá durante la etapa de implementación y deberá reflejar esta secuencia lógica.
+
+### 6.6.12 Seed y Rollback
+
+* El Seed se ejecutará después de completar la estructura física y sus constraints.
+* Los datos de Seed se cargarán respetando sus dependencias referenciales.
+* Los scripts Seed no dependerán de valores concretos generados por `IDENTITY`; utilizarán Codes u otras claves estables aprobadas para localizar registros y recuperar sus identificadores.
+* La definición concreta de los registros Seed de Identity & Security se documentará antes de su implementación.
+* El Rollback seguirá el orden inverso de las dependencias de creación.
+* El Rollback no utilizará `CASCADE` como mecanismo de simplificación.
+
+### 6.6.13 Secuencia lógica de Rollback
+
+La reversión del dominio deberá ejecutarse en orden inverso a la creación y respetando las dependencias referenciales.
+
+El orden lógico será:
+
+1. Eliminación controlada de los datos Seed, cuando corresponda.
+2. Eliminación de índices secundarios.
+3. Eliminación de Foreign Keys.
+4. Eliminación de tablas en orden inverso a sus dependencias.
+5. Eliminación de objetos de schema adicionales, cuando hayan sido creados específicamente para el dominio.
+
+El Rollback deberá ser reproducible y no deberá depender de `CASCADE DELETE`.
+
+### 6.6.14 Trazabilidad de las decisiones físicas
+
+Las decisiones de esta sección constituyen la línea base física aprobada para el dominio Identity & Security y deberán reutilizarse sin reinterpretación en:
+
+* el Modelo Físico de Datos;
+* los scripts SQL de creación;
+* los scripts de Rollback;
+* los scripts Seed, cuando aplique;
+* la implementación en Azure SQL Database;
+* las pruebas y validaciones de estructura e integridad.
+
+Cualquier modificación posterior a estas decisiones deberá identificarse como una nueva decisión de diseño, analizar su impacto sobre los artefactos relacionados y ser aprobada antes de incorporarse al Modelo Físico o a los scripts de implementación.
+
+### 6.6.15 Implementación y Validación del Dominio Identity & Security
+
+El dominio Identity & Security ha sido implementado en Azure SQL Database conforme al Modelo Físico de Datos y a los scripts SQL definidos para el dominio.
+
+La implementación comprende:
+
+- Creación de las 13 tablas del dominio.
+- Creación de las Primary Keys.
+- Creación de las restricciones UNIQUE.
+- Creación de las restricciones CHECK.
+- Creación de los valores DEFAULT.
+- Creación de las Foreign Keys.
+- Creación de los índices secundarios aprobados.
+- Ejecución del Seed Data definido.
+- Validación de la estructura física.
+- Validación de las relaciones y restricciones.
+- Validación de los índices.
+- Validación de los datos Seed.
+- Validación de integridad referencial.
+
+Los scripts utilizados para la implementación se encuentran bajo:
+
+`docs/database/scripts/`
+
+La secuencia de implementación utilizada fue:
+
+1. `create/001_CreateTables.sql`
+2. `create/002_CreateForeignKeys.sql`
+3. `create/003_CreateIndexes.sql`
+4. `seed/004_Seed.sql`
+5. `validation/900_Validation.sql`
+
+La implementación fue ejecutada directamente sobre la base de datos Azure SQL Database de BudgetKeep y posteriormente verificada mediante consultas de validación en SQL Server Management Studio (SSMS).
+
+El script de validación finalizó correctamente y no reportó errores.
+
+El dominio Identity & Security cumple con los criterios de implementación y validación definidos por esta especificación.
+
 # 7. Convenciones de Diseño
 
 Las convenciones definidas en esta sección establecen el estándar oficial para la construcción de todos los objetos de la base de datos de BudgetKeep.
@@ -783,6 +1013,10 @@ Las reglas de auditoría e historial definidas en esta sección deberán aplicar
 
 Las entidades que requieran un tratamiento diferente deberán documentar explícitamente la justificación técnica correspondiente dentro de esta especificación.
 
+---
+
+# 13. Modelo de Persistencia y Entidades
+
 ## 13.1 Matriz de Transformación del Modelo de Dominio
 
 La presente matriz documenta la transformación oficial entre los Conceptos del Dominio definidos en el *Business Domain Specification* y el Modelo de Persistencia definido por el *Database Design Specification*.
@@ -814,9 +1048,7 @@ Como resultado del análisis realizado, el Modelo de Persistencia estará confor
 
 Los conceptos clasificados como **Derivados** o **Calculados** no serán implementados como entidades independientes dentro de la base de datos. Su información será obtenida mediante consultas, reglas de negocio o procesos de cálculo definidos por las disciplinas correspondientes.
 
-Las entidades técnicas necesarias para la implementación física de la base de datos, tales como configuración, auditoría, control interno u otras de naturaleza exclusivamente técnica, serán incorporadas durante el diseño del Modelo Físico de Datos y deberán mantener trazabilidad con las decisiones establecidas en la presente especificación.
-
----
+Las entidades de catálogo funcional o de soporte reutilizable podrán formar parte del Modelo Lógico de Datos cuando sean necesarias para representar valores controlados, referencias compartidas o estructuras de soporte requeridas por las entidades persistentes. Estas entidades deberán mantener trazabilidad con la necesidad funcional, técnica o de persistencia que justifique su incorporación. Las entidades puramente técnicas, cuyo propósito corresponda exclusivamente a mecanismos internos de implementación, control o soporte del motor de base de datos, serán definidas durante el diseño del Modelo Físico de Datos.
 
 ---
 
@@ -839,17 +1071,23 @@ Los dominios funcionales definidos para BudgetKeep son:
 
 | Dominio | Estado |
 |----------|--------|
-| Identity & Security | Diseño DDS completado |
-| Catalogs | Pendiente |
+| Identity & Security | CLOSED |
+| Catalogs | Diseño parcial |
 | Financial Resources | Pendiente |
 | Financial Events | Pendiente |
 | Financial Planning | Pendiente |
 | Financial Obligations | Pendiente |
 | Audit | Pendiente |
 
+### Entidades definidas de Catalogs
+
+Las entidades de Catalogs definidas hasta este momento son:
+
+- Language
+- TimeZone
 ---
 
-# 13. Diseño de Entidades
+## 13.3 Diseño de Entidades
 
 La presente sección define el diseño detallado de las entidades persistentes que conforman la base de datos de BudgetKeep.
 
@@ -867,7 +1105,7 @@ Al concluir el diseño de un dominio, deberán actualizarse los siguientes artef
 
 ---
 
-## 13.1 Dominio: Identity & Security
+### 13.3.1 Dominio: Identity & Security
 
 Este dominio agrupa las entidades responsables de la administración de usuarios, autenticación, autorización, seguridad de cuentas y configuración personal del sistema.
 
@@ -887,7 +1125,7 @@ Las entidades que conforman este dominio son:
 - SystemConfiguration
 - ConfigurationDataType
 
-### 13.1.1 Reglas de Auditoría
+#### 13.3.1.1 Reglas de Auditoría
 
 Los atributos de auditoría CreatedBy, UpdatedBy y DeletedBy, cuando estén presentes en una entidad, deberán referenciar User.UserId.
 
@@ -903,9 +1141,9 @@ Los procesos de inicialización, migración o ejecución técnica que no cuenten
 
 ---
 
-## 13.2 Entity: User
+### 13.3.2 Entity: User
 
-### 13.2.1 Objetivo
+#### 13.3.2.1 Objetivo
 
 Representar a cada usuario registrado en BudgetKeep y establecer el propietario de toda la información financiera almacenada en el sistema.
 
@@ -913,7 +1151,7 @@ La entidad User constituye la raíz del modelo de datos y será la referencia pr
 
 ---
 
-### 13.2.2 Responsabilidades
+#### 13.3.2.2 Responsabilidades
 
 La entidad User es responsable de:
 
@@ -924,7 +1162,7 @@ La entidad User es responsable de:
 
 ---
 
-### 13.2.3 Fuera del Alcance
+#### 13.3.2.3 Fuera del Alcance
 
 La entidad User no será responsable de:
 
@@ -941,7 +1179,7 @@ Estas responsabilidades corresponden a los componentes de seguridad definidos po
 
 ---
 
-### 13.2.4 Relaciones
+#### 13.3.2.4 Relaciones
 
 La entidad User mantiene relaciones directas con las siguientes entidades:
 
@@ -955,7 +1193,7 @@ La entidad User mantiene relaciones directas con las siguientes entidades:
 
 ---
 
-### 13.2.5 Observaciones de Diseño
+#### 13.3.2.5 Observaciones de Diseño
 
 Toda la información funcional del producto deberá pertenecer a un único usuario.
 
@@ -972,7 +1210,7 @@ Las entidades compartidas entre usuarios únicamente podrán implementarse cuand
 - Una vez creado el primer usuario, los procesos de aplicación deberán registrar el UserId del usuario responsable en los atributos de auditoría aplicables cuando exista un usuario autenticado como responsable de la operación.
 - Los procesos de inicialización, migración o ejecución técnica que no cuenten con un usuario autenticado podrán mantener estos atributos en NULL cuando corresponda.
 
-### 13.2.5.1 Identificación y Soporte
+##### 13.3.2.5.1 Identificación y Soporte
 
 Al completar el registro y activación de una cuenta, el sistema deberá enviar un correo de bienvenida al correo electrónico registrado del usuario.
 
@@ -991,7 +1229,7 @@ El SupportId será utilizado como identificador de atención ante el servicio de
 
 Cuando una cuenta tenga RequiresSupport = true, el usuario deberá utilizar el canal oficial de soporte para solicitar atención.
 
-### 13.2.6 Atributos
+#### 13.3.2.6 Atributos
 
 La siguiente tabla define los atributos funcionales de la entidad **User**.
 
@@ -1020,9 +1258,9 @@ La definición de tipos de datos físicos, restricciones e índices será desarr
 
 ---
 
-## 13.3 Entity: UserSecurity
+### 13.3.3 Entity: UserSecurity
 
-### 13.3.1 Objetivo
+#### 13.3.3.1 Objetivo
 
 Almacenar la información persistente relacionada con las credenciales y el estado de seguridad de la cuenta de un usuario.
 
@@ -1030,7 +1268,7 @@ La entidad UserSecurity mantiene una relación uno a uno con User y separa la in
 
 ---
 
-### 13.3.2 Responsabilidades
+#### 13.3.3.2 Responsabilidades
 
 La entidad UserSecurity es responsable de:
 
@@ -1046,7 +1284,7 @@ La entidad UserSecurity es responsable de:
 
 ---
 
-### 13.3.3 Fuera del Alcance
+#### 13.3.3.3 Fuera del Alcance
 
 La entidad UserSecurity no será responsable de:
 
@@ -1070,7 +1308,7 @@ PasswordHash almacenará el resultado del proceso de hashing y no deberá permit
 
 ---
 
-### 13.3.4 Relaciones
+#### 13.3.3.4 Relaciones
 
 La entidad UserSecurity mantiene una relación uno a uno obligatoria con:
 
@@ -1083,7 +1321,7 @@ Cada UserSecurity deberá pertenecer exactamente a un User.
 
 ---
 
-### 13.3.5 Reglas Generales
+#### 13.3.3.5 Reglas Generales
 
 - Cada usuario deberá tener exactamente un registro en UserSecurity.
 - UserSecurity no podrá existir sin un User correspondiente.
@@ -1132,7 +1370,7 @@ Cada UserSecurity deberá pertenecer exactamente a un User.
 
 ---
 
-### 13.3.6 Atributos
+#### 13.3.3.6 Atributos
 
 La siguiente tabla define los atributos lógicos de la entidad **UserSecurity**.
 
@@ -1150,9 +1388,9 @@ La definición de tipos de datos físicos, restricciones e índices será desarr
 | PasswordChangedDate | Fecha y hora del último cambio de contraseña. | No |
 | RequiresSupport | Indica que la cuenta ha alcanzado el límite de bloqueos permitido y requiere intervención del servicio de soporte. | Sí |
 
-## 13.4 Entity: Role
+### 13.3.4 Entity: Role
 
-### 13.4.1 Objetivo
+#### 13.3.4.1 Objetivo
 
 Representar los roles funcionales disponibles dentro de BudgetKeep para controlar el acceso de los usuarios a las diferentes funcionalidades del sistema.
 
@@ -1160,7 +1398,7 @@ Un Role representa un conjunto lógico de permisos que puede ser asignado a uno 
 
 ---
 
-### 13.4.2 Responsabilidades
+#### 13.3.4.2 Responsabilidades
 
 La entidad Role es responsable de:
 
@@ -1171,7 +1409,7 @@ La entidad Role es responsable de:
 
 ---
 
-### 13.4.3 Fuera del Alcance
+#### 13.3.4.3 Fuera del Alcance
 
 La entidad Role no será responsable de:
 
@@ -1185,7 +1423,7 @@ La asignación de roles a usuarios será gestionada mediante UserRole y la relac
 
 ---
 
-### 13.4.4 Relaciones
+#### 13.3.4.4 Relaciones
 
 La entidad Role mantiene relaciones con:
 
@@ -1198,7 +1436,7 @@ Un Role podrá estar asociado con múltiples permisos mediante RolePermission.
 
 ---
 
-### 13.4.5 Reglas Generales
+#### 13.3.4.5 Reglas Generales
 
 - Un Role podrá ser asignado a múltiples usuarios.
 - Un usuario podrá tener múltiples roles.
@@ -1213,7 +1451,7 @@ Un Role podrá estar asociado con múltiples permisos mediante RolePermission.
 
 ---
 
-### 13.4.6 Atributos
+#### 13.3.4.6 Atributos
 
 La siguiente tabla define los atributos lógicos de la entidad **Role**.
 
@@ -1236,9 +1474,9 @@ La definición de tipos de datos físicos, restricciones e índices será desarr
 
 ---
 
-## 13.5 Entity: Module
+### 13.3.5 Entity: Module
 
-### 13.5.1 Objetivo
+#### 13.3.5.1 Objetivo
 
 Representar las funcionalidades o áreas funcionales del sistema sobre las cuales se definirán permisos de acceso.
 
@@ -1246,7 +1484,7 @@ Un Module permite organizar los permisos de BudgetKeep de acuerdo con la funcion
 
 ---
 
-### 13.5.2 Responsabilidades
+#### 13.3.5.2 Responsabilidades
 
 La entidad Module es responsable de:
 
@@ -1257,7 +1495,7 @@ La entidad Module es responsable de:
 
 ---
 
-### 13.5.3 Fuera del Alcance
+#### 13.3.5.3 Fuera del Alcance
 
 La entidad Module no será responsable de:
 
@@ -1271,7 +1509,7 @@ La relación entre módulos y permisos será gestionada mediante ModulePermissio
 
 ---
 
-### 13.5.4 Relaciones
+#### 13.3.5.4 Relaciones
 
 La entidad Module mantiene una relación con:
 
@@ -1281,7 +1519,7 @@ Un Module podrá estar asociado con múltiples permisos mediante ModulePermissio
 
 ---
 
-### 13.5.5 Reglas Generales
+#### 13.3.5.5 Reglas Generales
 
 - Cada Module deberá tener un Code único.
 - Code deberá ser estable y no depender del nombre mostrado al usuario.
@@ -1292,7 +1530,7 @@ Un Module podrá estar asociado con múltiples permisos mediante ModulePermissio
 
 ---
 
-### 13.5.6 Atributos
+#### 13.3.5.6 Atributos
 
 La siguiente tabla define los atributos lógicos de la entidad **Module**.
 
@@ -1314,9 +1552,9 @@ La definición de tipos de datos físicos, restricciones e índices será desarr
 
 ---
 
-## 13.6 Entity: Permission
+### 13.3.6 Entity: Permission
 
-### 13.6.1 Objetivo
+#### 13.3.6.1 Objetivo
 
 Representar los tipos de operaciones o acciones de autorización que pueden aplicarse a las funcionalidades de BudgetKeep.
 
@@ -1326,7 +1564,7 @@ La asociación entre un Permission y una funcionalidad específica del sistema s
 
 ---
 
-### 13.6.2 Responsabilidades
+#### 13.3.6.2 Responsabilidades
 
 La entidad Permission es responsable de:
 
@@ -1337,7 +1575,7 @@ La entidad Permission es responsable de:
 
 ---
 
-### 13.6.3 Fuera del Alcance
+#### 13.3.6.3 Fuera del Alcance
 
 La entidad Permission no será responsable de:
 
@@ -1352,7 +1590,7 @@ La asignación de permisos a roles será gestionada mediante RolePermission.
 
 ---
 
-### 13.6.4 Relaciones
+#### 13.3.6.4 Relaciones
 
 La entidad Permission mantiene una relación con:
 
@@ -1362,7 +1600,7 @@ Un Permission podrá estar asociado con múltiples módulos mediante ModulePermi
 
 ---
 
-### 13.6.5 Reglas Generales
+#### 13.3.6.5 Reglas Generales
 
 - Cada Permission deberá tener un Code único.
 - Code deberá ser estable y no depender del texto mostrado al usuario.
@@ -1374,7 +1612,7 @@ Un Permission podrá estar asociado con múltiples módulos mediante ModulePermi
 
 ---
 
-### 13.6.6 Atributos
+#### 13.3.6.6 Atributos
 
 La siguiente tabla define los atributos lógicos de la entidad **Permission**.
 
@@ -1396,9 +1634,9 @@ La definición de tipos de datos físicos, restricciones e índices será desarr
 
 ---
 
-## 13.7 Entity: ModulePermission
+### 13.3.7 Entity: ModulePermission
 
-### 13.7.1 Objetivo
+#### 13.3.7.1 Objetivo
 
 Representar una combinación válida entre un Module y un Permission.
 
@@ -1408,7 +1646,7 @@ Por ejemplo, la combinación de un módulo Payments con el permiso VIEW represen
 
 ---
 
-### 13.7.2 Responsabilidades
+#### 13.3.7.2 Responsabilidades
 
 La entidad ModulePermission es responsable de:
 
@@ -1419,7 +1657,7 @@ La entidad ModulePermission es responsable de:
 
 ---
 
-### 13.7.3 Fuera del Alcance
+#### 13.3.7.3 Fuera del Alcance
 
 La entidad ModulePermission no será responsable de:
 
@@ -1432,7 +1670,7 @@ La asignación de una combinación ModulePermission a un Role será gestionada m
 
 ---
 
-### 13.7.4 Relaciones
+#### 13.3.7.4 Relaciones
 
 La entidad ModulePermission mantiene relaciones con:
 
@@ -1448,7 +1686,7 @@ Un ModulePermission podrá estar asociado con múltiples Roles mediante RolePerm
 
 ---
 
-### 13.7.5 Reglas Generales
+#### 13.3.7.5 Reglas Generales
 
 - La combinación `(ModuleId, PermissionId)` será única.
 - La combinación `(ModuleId, PermissionId)` será la Primary Key de la entidad.
@@ -1460,7 +1698,7 @@ Un ModulePermission podrá estar asociado con múltiples Roles mediante RolePerm
 
 ---
 
-### 13.7.6 Atributos
+#### 13.3.7.6 Atributos
 
 La siguiente tabla define los atributos lógicos de la entidad **ModulePermission**.
 
@@ -1480,9 +1718,9 @@ La definición de tipos de datos físicos, restricciones e índices será desarr
 
 ---
 
-## 13.8 Entity: UserRole
+### 13.3.8 Entity: UserRole
 
-### 13.8.1 Objetivo
+#### 13.3.8.1 Objetivo
 
 Representar la asignación de uno o varios roles a los usuarios de BudgetKeep.
 
@@ -1490,7 +1728,7 @@ UserRole es una entidad puente que implementa la relación muchos a muchos entre
 
 ---
 
-### 13.8.2 Responsabilidades
+#### 13.3.8.2 Responsabilidades
 
 La entidad UserRole es responsable de:
 
@@ -1501,7 +1739,7 @@ La entidad UserRole es responsable de:
 
 ---
 
-### 13.8.3 Fuera del Alcance
+#### 13.3.8.3 Fuera del Alcance
 
 La entidad UserRole no será responsable de:
 
@@ -1515,7 +1753,7 @@ Los permisos asociados a un rol serán gestionados mediante RolePermission.
 
 ---
 
-### 13.8.4 Relaciones
+#### 13.3.8.4 Relaciones
 
 La entidad UserRole mantiene relaciones con:
 
@@ -1528,7 +1766,7 @@ Un Role podrá tener múltiples registros en UserRole.
 
 ---
 
-### 13.8.5 Reglas Generales
+#### 13.3.8.5 Reglas Generales
 
 - La combinación `(UserId, RoleId)` será única.
 - La combinación `(UserId, RoleId)` será la Primary Key de la entidad.
@@ -1540,7 +1778,7 @@ Un Role podrá tener múltiples registros en UserRole.
 
 ---
 
-### 13.8.6 Atributos
+#### 13.3.8.6 Atributos
 
 La siguiente tabla define los atributos lógicos de la entidad **UserRole**.
 
@@ -1557,9 +1795,9 @@ La definición de tipos de datos físicos, restricciones e índices será desarr
 
 ---
 
-## 13.9 Entity: RolePermission
+### 13.3.9 Entity: RolePermission
 
-### 13.9.1 Objetivo
+#### 13.3.9.1 Objetivo
 
 Representar la asignación de una combinación ModulePermission a un Role.
 
@@ -1567,7 +1805,7 @@ RolePermission define qué operaciones puede realizar un Role dentro de una func
 
 ---
 
-### 13.9.2 Responsabilidades
+#### 13.3.9.2 Responsabilidades
 
 La entidad RolePermission es responsable de:
 
@@ -1578,7 +1816,7 @@ La entidad RolePermission es responsable de:
 
 ---
 
-### 13.9.3 Fuera del Alcance
+#### 13.3.9.3 Fuera del Alcance
 
 La entidad RolePermission no será responsable de:
 
@@ -1592,7 +1830,7 @@ La asignación de roles a usuarios será gestionada mediante UserRole.
 
 ---
 
-### 13.9.4 Relaciones
+#### 13.3.9.4 Relaciones
 
 La entidad RolePermission mantiene relaciones con:
 
@@ -1612,7 +1850,7 @@ como una Foreign Key compuesta.
 
 ---
 
-### 13.9.5 Reglas Generales
+#### 13.3.9.5 Reglas Generales
 
 - La combinación `(RoleId, ModuleId, PermissionId)` será única.
 - La combinación `(RoleId, ModuleId, PermissionId)` será la Primary Key de la entidad.
@@ -1624,7 +1862,7 @@ como una Foreign Key compuesta.
 
 ---
 
-### 13.9.6 Atributos
+#### 13.3.9.6 Atributos
 
 La siguiente tabla define los atributos lógicos de la entidad **RolePermission**.
 
@@ -1642,9 +1880,9 @@ La definición de tipos de datos físicos, restricciones e índices será desarr
 
 ---
 
-## 13.10 Entity: UserPreference
+### 13.3.10 Entity: UserPreference
 
-### 13.10.1 Objetivo
+#### 13.3.10.1 Objetivo
 
 Almacenar las preferencias configurables de cada usuario de BudgetKeep.
 
@@ -1652,7 +1890,7 @@ La entidad UserPreference representa la configuración personal asociada a un us
 
 ---
 
-### 13.10.2 Responsabilidades
+#### 13.3.10.2 Responsabilidades
 
 La entidad UserPreference es responsable de:
 
@@ -1663,7 +1901,7 @@ La entidad UserPreference es responsable de:
 
 ---
 
-### 13.10.3 Fuera del Alcance
+#### 13.3.10.3 Fuera del Alcance
 
 La entidad UserPreference no será responsable de:
 
@@ -1677,7 +1915,7 @@ Las configuraciones globales serán gestionadas mediante SystemConfiguration.
 
 ---
 
-### 13.10.4 Relaciones
+#### 13.3.10.4 Relaciones
 
 La entidad UserPreference mantiene una relación uno a uno con:
 
@@ -1689,7 +1927,7 @@ Un User podrá tener como máximo un registro UserPreference.
 
 ---
 
-### 13.10.5 Reglas Generales
+#### 13.3.10.5 Reglas Generales
 
 - UserId será la Primary Key de la entidad.
 - UserId será también Foreign Key hacia User.UserId.
@@ -1701,7 +1939,7 @@ Un User podrá tener como máximo un registro UserPreference.
 
 ---
 
-### 13.10.6 Atributos
+#### 13.3.10.6 Atributos
 
 La siguiente tabla define los atributos lógicos de la entidad **UserPreference**.
 
@@ -1719,9 +1957,9 @@ La definición de tipos de datos físicos, restricciones e índices será desarr
 
 ---
 
-## 13.11 Entity: SystemConfiguration
+### 13.3.11 Entity: SystemConfiguration
 
-### 13.11.1 Objetivo
+#### 13.3.11.1 Objetivo
 
 Centralizar los valores de configuración global utilizados por BudgetKeep que puedan requerir modificación sin alterar la estructura de la base de datos ni incorporar valores fijos directamente en el código de la aplicación.
 
@@ -1729,7 +1967,7 @@ La entidad SystemConfiguration constituye la fuente persistente de configuració
 
 ---
 
-### 13.11.2 Responsabilidades
+#### 13.3.11.2 Responsabilidades
 
 La entidad SystemConfiguration es responsable de:
 
@@ -1742,7 +1980,7 @@ La entidad SystemConfiguration es responsable de:
 
 ---
 
-### 13.11.3 Fuera del Alcance
+#### 13.3.11.3 Fuera del Alcance
 
 SystemConfiguration no será utilizada para almacenar:
 
@@ -1760,7 +1998,7 @@ SystemConfiguration podrá almacenar parámetros técnicos y de seguridad no sec
 
 ---
 
-### 13.11.4 Relaciones
+#### 13.3.11.4 Relaciones
 
 SystemConfiguration no mantiene relaciones funcionales con las entidades de negocio.
 
@@ -1773,7 +2011,7 @@ Las configuraciones serán consultadas por los componentes de aplicación que re
 
 ---
 
-### 13.11.5 Reglas Generales
+#### 13.3.11.5 Reglas Generales
 
 - Cada configuración deberá poseer un Code único.
 - Code deberá identificar de manera estable el propósito de la configuración.
@@ -1803,7 +2041,7 @@ Las configuraciones serán consultadas por los componentes de aplicación que re
 
 ---
 
-### 13.11.6 Atributos
+#### 13.3.11.6 Atributos
 
 La siguiente tabla define los atributos lógicos de la entidad **SystemConfiguration**.
 
@@ -1824,15 +2062,15 @@ La definición de tipos de datos físicos, restricciones e índices será desarr
 
 ---
 
-## 13.12 Entity: ConfigurationDataType
+### 13.3.12 Entity: ConfigurationDataType
 
-### 13.12.1 Objetivo
+#### 13.3.12.1 Objetivo
 
 Representar el catálogo controlado de tipos de datos permitidos para los valores almacenados en SystemConfiguration.
 
 ---
 
-### 13.12.2 Responsabilidades
+#### 13.3.12.2 Responsabilidades
 
 La entidad ConfigurationDataType es responsable de:
 
@@ -1843,7 +2081,7 @@ La entidad ConfigurationDataType es responsable de:
 
 ---
 
-### 13.12.3 Fuera del Alcance
+#### 13.3.12.3 Fuera del Alcance
 
 ConfigurationDataType no será responsable de:
 
@@ -1854,7 +2092,7 @@ ConfigurationDataType no será responsable de:
 
 ---
 
-### 13.12.4 Relaciones
+#### 13.3.12.4 Relaciones
 
 La entidad ConfigurationDataType mantiene una relación con:
 
@@ -1866,7 +2104,7 @@ Cada SystemConfiguration deberá utilizar un ConfigurationDataType válido.
 
 ---
 
-### 13.12.5 Reglas Generales
+#### 13.3.12.5 Reglas Generales
 
 - Cada ConfigurationDataType deberá tener un Code único.
 - Code deberá ser estable y no depender del nombre mostrado.
@@ -1876,7 +2114,7 @@ Cada SystemConfiguration deberá utilizar un ConfigurationDataType válido.
 
 ---
 
-### 13.12.6 Atributos
+#### 13.3.12.6 Atributos
 
 La siguiente tabla define los atributos lógicos de la entidad **ConfigurationDataType**.
 
@@ -1894,11 +2132,11 @@ La definición de tipos de datos físicos, restricciones e índices será desarr
 | UpdatedAt | Fecha y hora de la última modificación. | No |
 | UpdatedBy | Usuario responsable de la última modificación. | No |
 
-## 13.13 Relaciones del Dominio
+### 13.3.13 Relaciones del Dominio
 
 Las relaciones del dominio Identity & Security se definen de la siguiente manera:
 
-### User
+#### User
 
 - User 1:1 UserSecurity
   - UserSecurity.UserId es Primary Key y Foreign Key hacia User.UserId.
@@ -1913,7 +2151,7 @@ Las relaciones del dominio Identity & Security se definen de la siguiente manera
   - UserRole.UserId referencia User.UserId.
   - Un User podrá tener múltiples roles.
 
-### Role
+#### Role
 
 - Role 1:N UserRole
   - UserRole.RoleId referencia Role.RoleId.
@@ -1923,19 +2161,19 @@ Las relaciones del dominio Identity & Security se definen de la siguiente manera
   - RolePermission.RoleId referencia Role.RoleId.
   - Un Role podrá tener múltiples capacidades autorizadas.
 
-### Module
+#### Module
 
 - Module 1:N ModulePermission
   - ModulePermission.ModuleId referencia Module.ModuleId.
   - Un Module podrá tener múltiples permisos.
 
-### Permission
+#### Permission
 
 - Permission 1:N ModulePermission
   - ModulePermission.PermissionId referencia Permission.PermissionId.
   - Un Permission podrá utilizarse en múltiples módulos.
 
-### ModulePermission
+#### ModulePermission
 
 - ModulePermission 1:N RolePermission
   - RolePermission.(ModuleId, PermissionId) es Foreign Key compuesta hacia ModulePermission.(ModuleId, PermissionId).
@@ -1944,31 +2182,196 @@ Las relaciones del dominio Identity & Security se definen de la siguiente manera
 - La Primary Key de ModulePermission es (ModuleId, PermissionId).
 - La combinación ModuleId + PermissionId no podrá repetirse.
 
-### UserRole
+#### UserRole
 
 - La Primary Key de UserRole es (UserId, RoleId).
 - La combinación UserId + RoleId no podrá repetirse.
 
-### RolePermission
+#### RolePermission
 
 - La Primary Key de RolePermission es (RoleId, ModuleId, PermissionId).
 - La combinación RoleId + ModuleId + PermissionId no podrá repetirse.
 
-### UserPreference
+#### UserPreference
 
 - UserPreference.UserId es Primary Key y Foreign Key hacia User.UserId.
 - La relación User → UserPreference es uno a uno.
 - Un User podrá tener como máximo un registro UserPreference.
 
-### SystemConfiguration
+#### SystemConfiguration
 
 - ConfigurationDataTypeId referencia ConfigurationDataType.ConfigurationDataTypeId.
 - Un SystemConfiguration deberá utilizar exactamente un ConfigurationDataType válido.
 - SystemConfiguration no mantiene relaciones Foreign Key con las entidades funcionales del dominio.
 
-### ConfigurationDataType
+#### ConfigurationDataType
 
 - ConfigurationDataType 1:N SystemConfiguration.
 - Un ConfigurationDataType podrá ser utilizado por múltiples registros SystemConfiguration.
 - La incorporación de nuevos tipos deberá realizarse mediante una decisión de diseño y actualización del catálogo correspondiente.
+
+### 13.3.14 Dominio: Catalogs
+
+Este dominio agrupa las entidades de catálogo utilizadas por BudgetKeep para proporcionar valores controlados y reutilizables por diferentes componentes del sistema.
+
+El diseño de este dominio se desarrollará de manera incremental. En esta etapa se definen las entidades Language y TimeZone, requeridas por las preferencias del usuario.
+
+Las entidades de este dominio seguirán las convenciones generales de auditoría definidas para BudgetKeep. Cuando una entidad incluya los atributos CreatedBy o UpdatedBy, estos deberán referenciar User.UserId. Estos atributos podrán ser NULL cuando el registro sea creado o modificado mediante procesos de inicialización, migración o ejecución técnica que no cuenten con un usuario autenticado responsable de la operación.
+
+Las entidades definidas en esta etapa son:
+
+- Language
+- TimeZone
+
+### 13.3.15 Entity: Language
+
+#### 13.3.15.1 Objetivo
+
+Representar el catálogo de idiomas disponibles para BudgetKeep.
+
+La entidad Language proporciona los valores controlados que pueden ser utilizados por las preferencias de idioma de los usuarios y permite mantener una referencia estable para el idioma seleccionado.
+
+#### 13.3.15.2 Responsabilidades
+
+La entidad Language es responsable de:
+
+- Identificar de forma única cada idioma disponible.
+- Mantener el código estándar del idioma.
+- Mantener el nombre descriptivo del idioma.
+- Controlar la disponibilidad del idioma mediante IsActive.
+- Proporcionar una referencia reutilizable para las preferencias de idioma de los usuarios.
+
+#### 13.3.15.3 Fuera del Alcance
+
+La entidad Language no será responsable de:
+
+- Determinar el idioma preferido de un usuario.
+- Almacenar las preferencias completas del usuario.
+- Gestionar traducciones de textos de la aplicación.
+- Implementar la lógica de internacionalización.
+
+La selección del idioma preferido por cada usuario será responsabilidad de UserPreference.
+
+#### 13.3.15.4 Relaciones
+
+La entidad Language mantiene una relación con:
+
+- UserPreference
+
+Un Language podrá ser utilizado como idioma preferido por múltiples usuarios.
+
+La relación será implementada mediante:
+
+UserPreference.PreferredLanguageId → Language.LanguageId
+
+#### 13.3.15.5 Reglas Generales
+
+- Cada Language deberá tener un Code único.
+- Code deberá representar el identificador estándar del idioma.
+- Code deberá ser estable y no depender del nombre mostrado al usuario.
+- Name deberá representar el nombre descriptivo del idioma.
+- Los idiomas inactivos no deberán utilizarse para nuevas preferencias.
+- La eliminación de un Language deberá respetar las relaciones existentes y las reglas de integridad referencial.
+
+#### 13.3.15.6 Atributos
+
+La siguiente tabla define los atributos lógicos de la entidad **Language**.
+
+La definición de tipos de datos físicos, restricciones e índices será desarrollada durante el diseño físico de la entidad.
+
+| Atributo | Descripción | Obligatorio |
+|----------|-------------|-------------|
+| LanguageId | Identificador único del idioma. | Sí |
+| Code | Código estándar y estable que identifica el idioma. | Sí |
+| Name | Nombre descriptivo del idioma. | Sí |
+| IsActive | Indica si el idioma se encuentra disponible para selección. | Sí |
+| CreatedAt | Fecha y hora de creación del registro. | Sí |
+| CreatedBy | Usuario responsable de la creación. | No |
+| UpdatedAt | Fecha y hora de la última modificación. | No |
+| UpdatedBy | Usuario responsable de la última modificación. | No |
+
+### 13.3.16 Entity: TimeZone
+
+#### 13.3.16.1 Objetivo
+
+Representar el catálogo de zonas horarias disponibles para BudgetKeep.
+
+La entidad TimeZone proporciona los valores controlados que pueden ser utilizados por las preferencias de zona horaria de los usuarios y permite mantener una referencia estable para la zona horaria seleccionada.
+
+#### 13.3.16.2 Responsabilidades
+
+La entidad TimeZone es responsable de:
+
+- Identificar de forma única cada zona horaria disponible.
+- Mantener el identificador estándar de la zona horaria.
+- Mantener el nombre descriptivo de la zona horaria.
+- Controlar la disponibilidad de la zona horaria mediante IsActive.
+- Proporcionar una referencia reutilizable para las preferencias de zona horaria de los usuarios.
+
+#### 13.3.16.3 Fuera del Alcance
+
+La entidad TimeZone no será responsable de:
+
+- Determinar la zona horaria preferida de un usuario.
+- Almacenar las preferencias completas del usuario.
+- Realizar conversiones de fechas y horas.
+- Implementar la lógica de presentación de fechas y horas.
+
+La selección de la zona horaria utilizada por cada usuario será responsabilidad de UserPreference.
+
+#### 13.3.16.4 Relaciones
+
+La entidad TimeZone mantiene una relación con:
+
+- UserPreference
+
+Una TimeZone podrá ser utilizada por múltiples usuarios como zona horaria preferida.
+
+La relación será implementada mediante:
+
+UserPreference.TimeZoneId → TimeZone.TimeZoneId
+
+#### 13.3.16.5 Reglas Generales
+
+- Cada TimeZone deberá tener un Code único.
+- Code deberá representar el identificador estándar de la zona horaria.
+- Code deberá ser estable y no depender del nombre mostrado al usuario.
+- Name deberá representar el nombre descriptivo de la zona horaria.
+- Las zonas horarias inactivas no deberán utilizarse para nuevas preferencias.
+- La eliminación de una TimeZone deberá respetar las relaciones existentes y las reglas de integridad referencial.
+
+#### 13.3.16.6 Atributos
+
+La siguiente tabla define los atributos lógicos de la entidad **TimeZone**.
+
+La definición de tipos de datos físicos, restricciones e índices será desarrollada durante el diseño físico de la entidad.
+
+| Atributo | Descripción | Obligatorio |
+|----------|-------------|-------------|
+| TimeZoneId | Identificador único de la zona horaria. | Sí |
+| Code | Identificador estándar y estable de la zona horaria. | Sí |
+| Name | Nombre descriptivo de la zona horaria. | Sí |
+| IsActive | Indica si la zona horaria se encuentra disponible para selección. | Sí |
+| CreatedAt | Fecha y hora de creación del registro. | Sí |
+| CreatedBy | Usuario responsable de la creación. | No |
+| UpdatedAt | Fecha y hora de la última modificación. | No |
+| UpdatedBy | Usuario responsable de la última modificación. | No |
+
+### 13.3.17 Relaciones del Dominio Catalogs
+
+Las relaciones del dominio Catalogs se definen de la siguiente manera:
+
+#### Language
+
+- Language 1:N UserPreference
+  - UserPreference.PreferredLanguageId referencia Language.LanguageId.
+  - Un Language podrá ser utilizado como idioma preferido por múltiples usuarios.
+  - Cada UserPreference deberá utilizar un Language válido.
+
+#### TimeZone
+
+- TimeZone 1:N UserPreference
+  - UserPreference.TimeZoneId referencia TimeZone.TimeZoneId.
+  - Una TimeZone podrá ser utilizada por múltiples usuarios.
+  - Cada UserPreference deberá utilizar una TimeZone válida.
 
