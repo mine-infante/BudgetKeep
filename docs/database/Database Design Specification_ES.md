@@ -682,6 +682,87 @@ Los registros iniciales aprobados para Catalogs son:
 El Seed utilizará los códigos estables de los catálogos y no dependerá
 de valores específicos generados por IDENTITY.
 
+## 6.8 Decisiones Físicas — Financial Resources
+
+El dominio Financial Resources utiliza las decisiones físicas generales
+aprobadas en la sección 6.6 y define las siguientes decisiones específicas
+para sus entidades persistentes.
+
+### 6.8.1 Currency
+
+- `CurrencyId` utilizará `BIGINT IDENTITY(1,1)` y será `NOT NULL`.
+- `Code` utilizará `VARCHAR(50)` y será `NOT NULL`.
+- `Name` utilizará `NVARCHAR(150)` y será `NOT NULL`.
+- `Symbol` utilizará `NVARCHAR(10)` y será `NOT NULL`.
+- `IsActive` utilizará `BIT` y será `NOT NULL`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`, con default `SYSUTCDATETIME()`.
+- `CreatedBy` utilizará `BIGINT NULL` y referenciará `User.UserId`.
+- `UpdatedAt` utilizará `DATETIME2(3) NULL`.
+- `UpdatedBy` utilizará `BIGINT NULL` y referenciará `User.UserId`.
+- `Code` tendrá una restricción `UNIQUE`.
+- Las Foreign Keys de auditoría utilizarán `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
+- `Currency` no implementará eliminación lógica mediante `DeletedAt` y `DeletedBy`.
+- La desactivación de una moneda se realizará mediante `IsActive = 0`.
+
+### 6.8.2 FinancialResource
+
+- `FinancialResourceId` utilizará `BIGINT IDENTITY(1,1)` y será `NOT NULL`.
+- `UserId` utilizará `BIGINT` y será `NOT NULL`.
+- `Name` utilizará `NVARCHAR(150)` y será `NOT NULL`.
+- `ResourceType` utilizará `VARCHAR(50)` y será `NOT NULL`.
+- `CurrencyId` utilizará `BIGINT` y será `NOT NULL`.
+- `AvailableAmount` utilizará `DECIMAL(19,4)` y será `NOT NULL`.
+- `IsActive` utilizará `BIT` y será `NOT NULL`, con default `1`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`, con default `SYSUTCDATETIME()`.
+- `CreatedBy` utilizará `BIGINT NULL` y referenciará `User.UserId`.
+- `UpdatedAt` utilizará `DATETIME2(3) NULL`.
+- `UpdatedBy` utilizará `BIGINT NULL` y referenciará `User.UserId`.
+- `DeletedAt` utilizará `DATETIME2(3) NULL`.
+- `DeletedBy` utilizará `BIGINT NULL` y referenciará `User.UserId`.
+- Las Foreign Keys utilizarán `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
+
+### 6.8.3 Restricciones e índices
+
+- `PK_Currency` será la Primary Key de `Currency`.
+- `PK_FinancialResource` será la Primary Key de `FinancialResource`.
+- `UQ_Currency_Code` será la restricción `UNIQUE` de `Currency.Code`.
+- `IX_FinancialResource_UserId` se creará sobre `FinancialResource(UserId)`.
+- `IX_FinancialResource_CurrencyId` se creará sobre `FinancialResource(CurrencyId)`.
+- No se crearán índices adicionales sobre `IsActive`, `ResourceType`, auditoría o `Name` sin evidencia de consultas o necesidad de rendimiento.
+
+### 6.8.4 Foreign Keys
+
+- `FinancialResource.UserId` → `User.UserId`.
+- `FinancialResource.CurrencyId` → `Currency.CurrencyId`.
+- `Currency.CreatedBy` → `User.UserId`.
+- `Currency.UpdatedBy` → `User.UserId`.
+- `FinancialResource.CreatedBy` → `User.UserId`.
+- `FinancialResource.UpdatedBy` → `User.UserId`.
+- `FinancialResource.DeletedBy` → `User.UserId`.
+
+Todas las Foreign Keys utilizarán `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
+
+### 6.8.5 Defaults
+
+- `Currency.CreatedAt` → `SYSUTCDATETIME()`.
+- `Currency.IsActive` → `1`.
+- `FinancialResource.CreatedAt` → `SYSUTCDATETIME()`.
+- `FinancialResource.IsActive` → `1`.
+
+### 6.8.6 Seed
+
+Los registros iniciales aprobados para `Currency` son:
+
+| Code | Name | Symbol | IsActive |
+|------|------|--------|----------|
+| MXN | Peso mexicano | $ | 1 |
+| USD | US Dollar | $ | 1 |
+| EUR | Euro | € | 1 |
+
+El Seed utilizará `Code` como clave estable y no dependerá de valores específicos generados por `IDENTITY`.
+
+`FinancialResource` no tendrá Seed porque sus registros pertenecen a usuarios y deben ser creados mediante la operación funcional correspondiente.
+
 # 7. Convenciones de Diseño
 
 Las convenciones definidas en esta sección establecen el estándar oficial para la construcción de todos los objetos de la base de datos de BudgetKeep.
@@ -1128,7 +1209,7 @@ Los dominios funcionales definidos para BudgetKeep son:
 |----------|--------|
 | Identity & Security | CLOSED |
 | Catalogs | CLOSED
-| Financial Resources | Pendiente |
+| Financial Resources | CLOSED |
 | Financial Events | Pendiente |
 | Financial Planning | Pendiente |
 | Financial Obligations | Pendiente |
@@ -1140,6 +1221,14 @@ Las entidades de Catalogs definidas hasta este momento son:
 
 - Language
 - TimeZone
+
+### Entidades definidas de Financial Resources
+
+Las entidades de Financial Resources definidas para esta etapa son:
+
+- Financial Resource
+- Currency
+
 ---
 
 ## 13.3 Diseño de Entidades
@@ -2430,3 +2519,128 @@ Las relaciones del dominio Catalogs se definen de la siguiente manera:
   - Una TimeZone podrá ser utilizada por múltiples usuarios.
   - Cada UserPreference deberá utilizar una TimeZone válida.
 
+### 13.3.18 Dominio: Financial Resources
+
+El dominio Financial Resources agrupa las entidades responsables de
+representar los recursos financieros que forman parte de la realidad
+financiera del usuario.
+
+Las entidades que conforman este dominio son:
+
+- Financial Resource
+- Currency
+
+### 13.3.19 Entity: Financial Resource
+
+#### 13.3.19.1 Objetivo
+
+Representar los recursos financieros que el usuario incorpora a su
+realidad financiera y que puede utilizar para atender sus obligaciones.
+
+#### 13.3.19.2 Responsabilidades
+
+La entidad Financial Resource es responsable de:
+
+- Identificar cada recurso financiero del usuario.
+- Asociar el recurso con su propietario.
+- Identificar el tipo de recurso financiero.
+- Identificar la moneda del recurso.
+- Mantener el importe disponible del recurso.
+- Mantener el estado del recurso.
+
+#### 13.3.19.3 Relaciones
+
+Financial Resource mantiene las siguientes relaciones:
+
+- User 1:N Financial Resource.
+- Currency 1:N Financial Resource.
+
+Cada Financial Resource pertenece obligatoriamente a un único User.
+
+Cada Financial Resource utiliza obligatoriamente una única Currency.
+
+#### 13.3.19.4 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|----------|-------------|-------------|
+| FinancialResourceId | Identificador único del recurso financiero. | Sí |
+| UserId | Usuario propietario del recurso. | Sí |
+| Name | Nombre asignado por el usuario al recurso. | Sí |
+| ResourceType | Tipo de recurso financiero. | Sí |
+| CurrencyId | Moneda en la que se expresa el recurso. | Sí |
+| AvailableAmount | Importe actualmente disponible del recurso. | Sí |
+| IsActive | Indica si el recurso está activo. | Sí |
+| CreatedAt | Fecha y hora de creación del registro. | Sí |
+| CreatedBy | Usuario responsable de la creación. | No |
+| UpdatedAt | Fecha y hora de la última modificación. | No |
+| UpdatedBy | Usuario responsable de la última modificación. | No |
+| DeletedAt | Fecha y hora de eliminación lógica. | No |
+| DeletedBy | Usuario responsable de la eliminación lógica. | No |
+
+### 13.3.20 Entity: Currency
+
+#### 13.3.20.1 Objetivo
+
+Representar el catálogo oficial de monedas utilizadas por BudgetKeep
+para soportar la operación multimoneda del producto.
+
+#### 13.3.20.2 Responsabilidades
+
+La entidad Currency es responsable de:
+
+- Identificar de forma única una moneda.
+- Proporcionar el código de la moneda.
+- Proporcionar el nombre de la moneda.
+- Proporcionar el símbolo utilizado para su representación.
+- Indicar si la moneda se encuentra activa.
+
+#### 13.3.20.3 Relaciones
+
+Currency mantiene una relación 1:N con Financial Resource.
+
+Una Currency puede ser utilizada por múltiples Financial Resources.
+
+#### 13.3.20.4 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|----------|-------------|-------------|
+| CurrencyId | Identificador único de la moneda. | Sí |
+| Code | Código único y estable de la moneda. | Sí |
+| Name | Nombre descriptivo de la moneda. | Sí |
+| Symbol | Símbolo utilizado para representar la moneda. | Sí |
+| IsActive | Indica si la moneda está disponible para uso. | Sí |
+| CreatedAt | Fecha y hora de creación del registro. | Sí |
+| CreatedBy | Usuario responsable de la creación. | No |
+| UpdatedAt | Fecha y hora de la última modificación. | No |
+| UpdatedBy | Usuario responsable de la última modificación. | No |
+
+### 13.3.21 Relaciones del Dominio Financial Resources
+
+- User 1:N Financial Resource.
+  - FinancialResource.UserId referencia User.UserId.
+  - Cada Financial Resource pertenece obligatoriamente a un único User.
+
+- Currency 1:N Financial Resource.
+  - FinancialResource.CurrencyId referencia Currency.CurrencyId.
+  - Cada Financial Resource utiliza obligatoriamente una única Currency.
+
+  ### 13.3.22 Cierre del Dominio Financial Resources
+
+El dominio Financial Resources queda cerrado después de completar y
+validar su diseño lógico, diseño físico, implementación y artefactos
+de soporte.
+
+Artefactos completados:
+
+- Diseño lógico de Financial Resource y Currency.
+- ERD Level 1 actualizado.
+- Decisiones físicas documentadas.
+- Scripts de creación de tablas.
+- Scripts de Foreign Keys.
+- Scripts de índices.
+- Seed inicial de Currency.
+- Script de validación.
+- Scripts de rollback.
+
+La implementación del dominio fue ejecutada correctamente en Azure SQL
+y validada mediante el script correspondiente.

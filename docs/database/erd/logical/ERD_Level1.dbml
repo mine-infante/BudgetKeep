@@ -4,7 +4,7 @@
 // Level 1 - Logical Data Model
 //
 // Domain:
-// Identity & Security + Catalogs (partial)
+// Identity & Security + Catalogs + Financial Resources
 // ==========================================================
 
 Table User {
@@ -142,6 +142,34 @@ Table TimeZone {
   UpdatedBy bigint
 }
 
+Table Currency {
+  CurrencyId bigint [pk]
+  Code varchar [not null, unique]
+  Name varchar [not null]
+  Symbol varchar [not null]
+  IsActive boolean [not null]
+  CreatedAt datetime [not null]
+  CreatedBy bigint
+  UpdatedAt datetime
+  UpdatedBy bigint
+}
+
+Table FinancialResource {
+  FinancialResourceId bigint [pk]
+  UserId bigint [not null]
+  Name varchar [not null]
+  ResourceType varchar [not null]
+  CurrencyId bigint [not null]
+  AvailableAmount decimal [not null]
+  IsActive boolean [not null]
+  CreatedAt datetime [not null]
+  CreatedBy bigint
+  UpdatedAt datetime
+  UpdatedBy bigint
+  DeletedAt datetime
+  DeletedBy bigint
+}
+
 Table SystemConfiguration {
   SystemConfigurationId bigint [pk]
   Code varchar [not null, unique]
@@ -234,3 +262,13 @@ Ref: SystemConfiguration.UpdatedBy > User.UserId
 
 Ref: ConfigurationDataType.CreatedBy > User.UserId
 Ref: ConfigurationDataType.UpdatedBy > User.UserId
+
+Ref: FinancialResource.UserId > User.UserId
+Ref: FinancialResource.CurrencyId > Currency.CurrencyId
+
+Ref: Currency.CreatedBy > User.UserId
+Ref: Currency.UpdatedBy > User.UserId
+
+Ref: FinancialResource.CreatedBy > User.UserId
+Ref: FinancialResource.UpdatedBy > User.UserId
+Ref: FinancialResource.DeletedBy > User.UserId
