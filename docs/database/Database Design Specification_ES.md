@@ -627,6 +627,61 @@ El script de validación finalizó correctamente y no reportó errores.
 
 El dominio Identity & Security cumple con los criterios de implementación y validación definidos por esta especificación.
 
+## 6.7 Decisiones Físicas — Catalogs
+
+El dominio Catalogs utiliza las decisiones físicas generales aprobadas
+en la sección 6.6 y define las siguientes decisiones específicas para
+sus entidades persistentes.
+
+### 6.7.1 Language
+
+- `LanguageId` utilizará `BIGINT IDENTITY(1,1)` y será `NOT NULL`.
+- `Code` utilizará `VARCHAR(50)` y será `NOT NULL`.
+- `Name` utilizará `NVARCHAR(150)` y será `NOT NULL`.
+- `IsActive` utilizará `BIT` y será `NOT NULL`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`.
+- `CreatedBy` utilizará `BIGINT NULL` y referenciará `User.UserId`.
+- `UpdatedAt` utilizará `DATETIME2(3) NULL`.
+- `UpdatedBy` utilizará `BIGINT NULL` y referenciará `User.UserId`.
+- `Code` tendrá una restricción `UNIQUE`.
+- Las Foreign Keys de auditoría utilizarán `ON DELETE NO ACTION`
+  y `ON UPDATE NO ACTION`.
+
+### 6.7.2 TimeZone
+
+- `TimeZoneId` utilizará `BIGINT IDENTITY(1,1)` y será `NOT NULL`.
+- `Code` utilizará `VARCHAR(50)` y será `NOT NULL`.
+- `Name` utilizará `NVARCHAR(150)` y será `NOT NULL`.
+- `IsActive` utilizará `BIT` y será `NOT NULL`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`.
+- `CreatedBy` utilizará `BIGINT NULL` y referenciará `User.UserId`.
+- `UpdatedAt` utilizará `DATETIME2(3) NULL`.
+- `UpdatedBy` utilizará `BIGINT NULL` y referenciará `User.UserId`.
+- `Code` tendrá una restricción `UNIQUE`.
+- Las Foreign Keys de auditoría utilizarán `ON DELETE NO ACTION`
+  y `ON UPDATE NO ACTION`.
+
+### 6.7.3 Seed
+
+Los registros iniciales aprobados para Catalogs son:
+
+#### Language
+
+| Code | Name | IsActive |
+|------|------|----------|
+| en | English | 1 |
+| es | Español | 1 |
+
+#### TimeZone
+
+| Code | Name | IsActive |
+|------|------|----------|
+| America/Mexico_City | Mexico City | 1 |
+| UTC | Coordinated Universal Time | 1 |
+
+El Seed utilizará los códigos estables de los catálogos y no dependerá
+de valores específicos generados por IDENTITY.
+
 # 7. Convenciones de Diseño
 
 Las convenciones definidas en esta sección establecen el estándar oficial para la construcción de todos los objetos de la base de datos de BudgetKeep.
@@ -1072,7 +1127,7 @@ Los dominios funcionales definidos para BudgetKeep son:
 | Dominio | Estado |
 |----------|--------|
 | Identity & Security | CLOSED |
-| Catalogs | Diseño parcial |
+| Catalogs | CLOSED
 | Financial Resources | Pendiente |
 | Financial Events | Pendiente |
 | Financial Planning | Pendiente |
