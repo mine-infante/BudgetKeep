@@ -3,8 +3,13 @@
 // Entity Relationship Diagram (ERD)
 // Level 1 - Logical Data Model
 //
-// Domain:
+// Domains:
 // Identity & Security + Catalogs + Financial Resources
+// + Financial Events
+// ==========================================================
+
+// ==========================================================
+// Identity & Security
 // ==========================================================
 
 Table User {
@@ -142,6 +147,10 @@ Table TimeZone {
   UpdatedBy bigint
 }
 
+// ==========================================================
+// Catalogs
+// ==========================================================
+
 Table Currency {
   CurrencyId bigint [pk]
   Code varchar [not null, unique]
@@ -153,6 +162,50 @@ Table Currency {
   UpdatedAt datetime
   UpdatedBy bigint
 }
+
+Table IncomeType {
+  IncomeTypeId bigint [pk]
+  Code varchar [not null, unique]
+  Name varchar [not null]
+  Description varchar
+  IsActive boolean [not null]
+  CreatedAt datetime [not null]
+  CreatedBy bigint
+  UpdatedAt datetime
+  UpdatedBy bigint
+  DeletedAt datetime
+  DeletedBy bigint
+}
+
+Table ExpenseCategory {
+  ExpenseCategoryId bigint [pk]
+  Code varchar [not null, unique]
+  Name varchar [not null]
+  Description varchar
+  IsActive boolean [not null]
+  CreatedAt datetime [not null]
+  CreatedBy bigint
+  UpdatedAt datetime
+  UpdatedBy bigint
+  DeletedAt datetime
+  DeletedBy bigint
+}
+
+Table RecurrenceType {
+  RecurrenceTypeId bigint [pk]
+  Code varchar [not null, unique]
+  Name varchar [not null]
+  Description varchar
+  IsActive boolean [not null]
+  CreatedAt datetime [not null]
+  CreatedBy bigint
+  UpdatedAt datetime
+  UpdatedBy bigint
+}
+
+// ==========================================================
+// Financial Resources
+// ==========================================================
 
 Table FinancialResource {
   FinancialResourceId bigint [pk]
@@ -169,6 +222,10 @@ Table FinancialResource {
   DeletedAt datetime
   DeletedBy bigint
 }
+
+// ==========================================================
+// System Configuration
+// ==========================================================
 
 Table SystemConfiguration {
   SystemConfigurationId bigint [pk]
@@ -195,11 +252,101 @@ Table ConfigurationDataType {
   UpdatedBy bigint
 }
 
+// ==========================================================
+// Financial Events
+// ==========================================================
+
+Table Income {
+  IncomeId bigint [pk]
+  UserId bigint [not null]
+  Name varchar [not null]
+  IncomeTypeId bigint [not null]
+  CurrencyId bigint [not null]
+  ExpectedAmount decimal
+  IsActive boolean [not null]
+  CreatedAt datetime [not null]
+  CreatedBy bigint
+  UpdatedAt datetime
+  UpdatedBy bigint
+  DeletedAt datetime
+  DeletedBy bigint
+}
+
+Table Expense {
+  ExpenseId bigint [pk]
+  UserId bigint [not null]
+  Name varchar [not null]
+  ExpenseCategoryId bigint [not null]
+  ExpenseType varchar [not null]
+  CurrencyId bigint [not null]
+  ExpectedAmount decimal
+  IsActive boolean [not null]
+  CreatedAt datetime [not null]
+  CreatedBy bigint
+  UpdatedAt datetime
+  UpdatedBy bigint
+  DeletedAt datetime
+  DeletedBy bigint
+}
+
+Table StandAlone {
+  StandAloneId bigint [pk]
+  UserId bigint [not null]
+  EventType varchar [not null]
+  Description varchar [not null]
+  CurrencyId bigint [not null]
+  CreatedAt datetime [not null]
+  CreatedBy bigint
+  UpdatedAt datetime
+  UpdatedBy bigint
+  DeletedAt datetime
+  DeletedBy bigint
+}
+
+Table FinancialEvent {
+  FinancialEventId bigint [pk]
+  UserId bigint [not null]
+  EventType varchar [not null]
+  IncomeId bigint
+  ExpenseId bigint
+  StandAloneId bigint
+  ExpectedDate date [not null]
+  ActualDate date
+  ExpectedAmount decimal
+  ActualAmount decimal
+  EventStatus varchar [not null]
+  CreatedAt datetime [not null]
+  CreatedBy bigint
+  UpdatedAt datetime
+  UpdatedBy bigint
+  DeletedAt datetime
+  DeletedBy bigint
+}
+
+Table RecurrenceConfiguration {
+  RecurrenceConfigurationId bigint [pk]
+  IncomeId bigint
+  ExpenseId bigint
+  RecurrenceTypeId bigint [not null]
+  StartDate date [not null]
+  EndDate date
+  DayOfMonth int
+  DayOfWeek int
+  AnchorDate date
+  IsActive boolean [not null]
+  CreatedAt datetime [not null]
+  CreatedBy bigint
+  UpdatedAt datetime
+  UpdatedBy bigint
+  DeletedAt datetime
+  DeletedBy bigint
+}
 
 // ==========================================================
 // Relaciones funcionales
 // ==========================================================
 
+// Identity & Security
 Ref: UserSecurity.UserId - User.UserId
 
 Ref: UserPreference.UserId - User.UserId
@@ -215,9 +362,58 @@ Ref: ModulePermission.PermissionId > Permission.PermissionId
 Ref: RolePermission.RoleId > Role.RoleId
 Ref: RolePermission.(ModuleId, PermissionId) > ModulePermission.(ModuleId, PermissionId)
 
+// System Configuration
 Ref: SystemConfiguration.ConfigurationDataTypeId > ConfigurationDataType.ConfigurationDataTypeId
 
+// Financial Resources
+Ref: FinancialResource.UserId > User.UserId
+Ref: FinancialResource.CurrencyId > Currency.CurrencyId
 
+// Financial Events — source definitions
+Ref: Income.UserId > User.UserId
+Ref: Income.IncomeTypeId > IncomeType.IncomeTypeId
+Ref: Income.CurrencyId > Currency.CurrencyId
+
+Ref: Expense.UserId > User.UserId
+Ref: Expense.ExpenseCategoryId > ExpenseCategory.ExpenseCategoryId
+Ref: Expense.CurrencyId > Currency.CurrencyId
+
+Ref: StandAlone.UserId > User.UserId
+Ref: StandAlone.CurrencyId > Currency.CurrencyId
+
+// Financial Events — occurrences
+Ref: FinancialEvent.UserId > User.UserId
+Ref: FinancialEvent.IncomeId > Income.IncomeId
+Ref: FinancialEvent.ExpenseId > Expense.ExpenseId
+Ref: FinancialEvent.StandAloneId > StandAlone.StandAloneId
+
+// Financial Events — recurrence
+Ref: RecurrenceConfiguration.IncomeId > Income.IncomeId
+Ref: RecurrenceConfiguration.ExpenseId > Expense.ExpenseId
+Ref: RecurrenceConfiguration.RecurrenceTypeId > RecurrenceType.RecurrenceTypeId
+
+// ==========================================================
+// Reglas del modelo que no se expresan completamente mediante
+// las relaciones DBML
+// ==========================================================
+//
+// FinancialEvent source XOR:
+// exactly one of IncomeId, ExpenseId, StandAloneId must be populated.
+//
+// Income -> FinancialEvent: 1:N
+// Expense -> FinancialEvent: 1:N
+// StandAlone -> FinancialEvent: 1:N
+//
+// Income -> RecurrenceConfiguration: 1:0..1
+// Expense -> RecurrenceConfiguration: 1:0..1
+//
+// StandAlone does NOT have RecurrenceConfiguration.
+// A StandAlone may be reused as the source of multiple FinancialEvents.
+// It does not automatically generate recurring events.
+//
+// FinancialEvent.Expected* represents the expected state.
+// FinancialEvent.Actual* represents the user-confirmed reality.
+//
 // ==========================================================
 // Relaciones técnicas de auditoría
 // ==========================================================
@@ -257,18 +453,46 @@ Ref: Language.UpdatedBy > User.UserId
 Ref: TimeZone.CreatedBy > User.UserId
 Ref: TimeZone.UpdatedBy > User.UserId
 
+Ref: Currency.CreatedBy > User.UserId
+Ref: Currency.UpdatedBy > User.UserId
+
+Ref: IncomeType.CreatedBy > User.UserId
+Ref: IncomeType.UpdatedBy > User.UserId
+Ref: IncomeType.DeletedBy > User.UserId
+
+Ref: ExpenseCategory.CreatedBy > User.UserId
+Ref: ExpenseCategory.UpdatedBy > User.UserId
+Ref: ExpenseCategory.DeletedBy > User.UserId
+
+Ref: RecurrenceType.CreatedBy > User.UserId
+Ref: RecurrenceType.UpdatedBy > User.UserId
+
 Ref: SystemConfiguration.CreatedBy > User.UserId
 Ref: SystemConfiguration.UpdatedBy > User.UserId
 
 Ref: ConfigurationDataType.CreatedBy > User.UserId
 Ref: ConfigurationDataType.UpdatedBy > User.UserId
 
-Ref: FinancialResource.UserId > User.UserId
-Ref: FinancialResource.CurrencyId > Currency.CurrencyId
-
-Ref: Currency.CreatedBy > User.UserId
-Ref: Currency.UpdatedBy > User.UserId
-
 Ref: FinancialResource.CreatedBy > User.UserId
 Ref: FinancialResource.UpdatedBy > User.UserId
 Ref: FinancialResource.DeletedBy > User.UserId
+
+Ref: Income.CreatedBy > User.UserId
+Ref: Income.UpdatedBy > User.UserId
+Ref: Income.DeletedBy > User.UserId
+
+Ref: Expense.CreatedBy > User.UserId
+Ref: Expense.UpdatedBy > User.UserId
+Ref: Expense.DeletedBy > User.UserId
+
+Ref: StandAlone.CreatedBy > User.UserId
+Ref: StandAlone.UpdatedBy > User.UserId
+Ref: StandAlone.DeletedBy > User.UserId
+
+Ref: FinancialEvent.CreatedBy > User.UserId
+Ref: FinancialEvent.UpdatedBy > User.UserId
+Ref: FinancialEvent.DeletedBy > User.UserId
+
+Ref: RecurrenceConfiguration.CreatedBy > User.UserId
+Ref: RecurrenceConfiguration.UpdatedBy > User.UserId
+Ref: RecurrenceConfiguration.DeletedBy > User.UserId

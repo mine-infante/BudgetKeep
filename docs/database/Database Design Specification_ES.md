@@ -763,6 +763,812 @@ El Seed utilizará `Code` como clave estable y no dependerá de valores específ
 
 `FinancialResource` no tendrá Seed porque sus registros pertenecen a usuarios y deben ser creados mediante la operación funcional correspondiente.
 
+## 6.9 Decisiones de Diseño — Financial Events
+
+Las siguientes decisiones establecen la línea base de diseño para el dominio
+Financial Events.
+
+Estas decisiones definen la separación entre las configuraciones financieras
+del Usuario, las reglas de recurrencia y las ocurrencias financieras
+persistentes.
+
+El diseño deberá mantener consistencia con el Modelo de Dominio, el Modelo
+Lógico de Datos y los principios generales definidos en esta especificación,
+particularmente con los principios de integridad, fuente única de verdad,
+normalización, trazabilidad y persistencia basada en responsabilidades.
+
+### 6.9.1 Separación entre definición y ocurrencia
+
+`Income` y `Expense` representan definiciones financieras configuradas por el
+Usuario.
+
+`StandAlone` representa un evento financiero registrado directamente por el
+Usuario, sin una definición previa de Income o Expense y sin recurrencia.
+
+`Income`, `Expense` y `StandAlone` constituyen las tres posibles fuentes de
+un `Financial Event`.
+
+`Financial Event` representa una ocurrencia financiera concreta.
+
+Una misma definición de `Income` o `Expense` podrá generar múltiples
+`Financial Event` a lo largo del tiempo.
+
+Por ejemplo:
+
+- `Income 1` = Salario.
+- `Financial Event 1` = Salario correspondiente al 15 de agosto.
+- `Financial Event 2` = Salario correspondiente al último día de agosto.
+- `Financial Event 3` = Salario correspondiente al 15 de septiembre.
+
+De forma equivalente:
+
+- `Expense 1` = Renta de casa.
+- `Financial Event 10` = Renta correspondiente a agosto.
+- `Financial Event 11` = Renta correspondiente a septiembre.
+- `Financial Event 12` = Renta correspondiente a octubre.
+
+Esta separación evita duplicar la configuración del concepto financiero en
+cada ocurrencia y permite conservar el historial de cada evento.
+
+### 6.9.2 Income como definición de ingreso
+
+`Income` representará una definición de ingreso perteneciente a un Usuario.
+
+La entidad permitirá registrar conceptos como:
+
+- Salario.
+- Salario secundario.
+- Freelance.
+- Ingreso por inversiones.
+- Otros ingresos definidos por el Usuario.
+
+Un `Income` podrá tener una configuración de recurrencia, pero la recurrencia
+no será obligatoria.
+
+Un `Income` podrá generar múltiples `Financial Event`.
+
+El importe definido para un `Income`, cuando exista, representará el importe
+esperado o de referencia para sus futuras ocurrencias y no sustituirá el
+importe registrado en cada `Financial Event`.
+
+### 6.9.3 Expense como definición de gasto
+
+`Expense` representará una definición de gasto perteneciente a un Usuario.
+
+La entidad permitirá registrar conceptos como:
+
+- Renta de casa.
+- Servicios.
+- Supermercado.
+- Transporte.
+- Otros gastos definidos por el Usuario.
+
+Un `Expense` podrá clasificarse como gasto fijo o variable de acuerdo con
+las necesidades funcionales del producto.
+
+Un `Expense` podrá tener una configuración de recurrencia, pero la recurrencia
+no será obligatoria.
+
+Un `Expense` podrá generar múltiples `Financial Event`.
+
+El importe definido para un `Expense`, cuando exista, representará el importe
+esperado o de referencia para sus futuras ocurrencias y no sustituirá el
+importe registrado en cada `Financial Event`.
+
+### 6.9.4 Financial Event como ocurrencia financiera
+
+`Financial Event` representará una ocurrencia financiera concreta asociada
+a un `Income` o `Expense`.
+
+Cada `Financial Event` conservará la información correspondiente a su propia
+ocurrencia, incluyendo el importe y la fecha aplicables a dicha ocurrencia.
+
+Un `Financial Event` podrá existir sin una configuración de recurrencia.
+
+Esto permitirá registrar eventos:
+
+- únicos;
+- no recurrentes;
+- cuya fecha no siga un patrón;
+- cuya recurrencia no sea conocida;
+- que simplemente ya ocurrieron y fueron registrados por el Usuario.
+
+### 6.9.5 RecurrenceConfiguration como configuración opcional
+
+`RecurrenceConfiguration` representará la configuración utilizada para
+determinar las futuras ocurrencias esperadas de un `Income` o `Expense`.
+
+La relación será opcional:
+
+- Un `Income` podrá tener cero o una `RecurrenceConfiguration`.
+- Un `Expense` podrá tener cero o una `RecurrenceConfiguration`.
+
+Una `RecurrenceConfiguration` deberá pertenecer a un único `Income` o a un
+único `Expense`.
+
+La configuración de recurrencia no representará por sí misma una ocurrencia
+financiera.
+
+### 6.9.6 RecurrenceType como catálogo de reglas de calendario
+
+`RecurrenceType` representará el catálogo de reglas de calendario soportadas
+por BudgetKeep.
+
+El catálogo no deberá interpretar la recurrencia únicamente como la suma
+de una cantidad fija de días.
+
+Las reglas deberán representar patrones de calendario financieros.
+
+Entre los patrones soportados se contemplan:
+
+- Mensual en día específico.
+- Quincenal: día 15 y último día del mes.
+- Semanal en un día específico de la semana.
+- Catorcenal: un día específico de la semana cada dos semanas, utilizando
+  una fecha de referencia para determinar la secuencia.
+- Anual en una fecha específica.
+
+La lista definitiva de valores del catálogo y sus parámetros requeridos se
+definirá durante el diseño lógico y físico de la entidad.
+
+### 6.9.7 Interpretación de la recurrencia
+
+La recurrencia deberá representar el patrón de calendario que el Usuario
+pretende utilizar y no deberá interpretarse automáticamente como una
+cantidad fija de días entre ocurrencias.
+
+Por ejemplo:
+
+`Quincenal` significará:
+
+- día 15 del mes; y
+- último día del mes.
+
+No significará sumar exactamente 15 días a la ocurrencia anterior.
+
+En cambio, una recurrencia `Catorcenal` podrá representar un día específico
+de la semana cada dos semanas.
+
+Por ejemplo:
+
+- viernes 7 de agosto;
+- viernes 21 de agosto;
+- viernes 4 de septiembre;
+- viernes 18 de septiembre.
+
+La configuración deberá proporcionar la información necesaria para calcular
+las fechas futuras sin requerir que el Usuario capture cada fecha
+manualmente.
+
+### 6.9.8 Generación de ocurrencias futuras
+
+Cuando un `Income` o `Expense` tenga una `RecurrenceConfiguration` activa,
+BudgetKeep deberá utilizar dicha configuración para generar o mantener las
+ocurrencias futuras esperadas.
+
+El Usuario deberá realizar la configuración inicial una sola vez y no deberá
+registrar manualmente cada ocurrencia recurrente.
+
+La generación de una ocurrencia futura tendrá como propósito ayudar al
+Usuario a organizarse y recordar sus compromisos financieros.
+
+La generación automática de una ocurrencia no implicará que la operación
+financiera haya ocurrido.
+
+### 6.9.9 Estado Expected
+
+Las ocurrencias generadas automáticamente deberán iniciar como `EXPECTED`.
+
+`EXPECTED` representa una ocurrencia financiera esperada de acuerdo con la
+configuración registrada por el Usuario.
+
+Un `Financial Event` en estado `EXPECTED` no representará por sí mismo una
+operación financiera confirmada.
+
+La existencia de un `Financial Event` `EXPECTED` permitirá que BudgetKeep
+muestre al Usuario lo que se espera que ocurra durante el periodo consultado.
+
+### 6.9.10 Confirmación como fuente de verdad
+
+La confirmación explícita del Usuario constituirá la fuente de verdad para
+determinar que una ocurrencia financiera realmente ocurrió.
+
+Cuando el Usuario confirme un `Financial Event`, éste podrá pasar de
+`EXPECTED` a `CONFIRMED`.
+
+BudgetKeep no deberá inferir que un evento ocurrió únicamente porque haya
+llegado o pasado su fecha esperada.
+
+El transcurso del tiempo no deberá modificar automáticamente el estado del
+evento.
+
+Un evento `EXPECTED` que no haya sido confirmado deberá permanecer como
+`EXPECTED`, independientemente de que su fecha esperada haya pasado.
+
+### 6.9.11 Realidad Financiera
+
+Para efectos de la Realidad Financiera:
+
+- `EXPECTED` representa una expectativa o planificación.
+- `CONFIRMED` representa una ocurrencia confirmada por el Usuario.
+
+Un `Financial Event` `EXPECTED` no deberá considerarse automáticamente como
+dinero recibido, dinero gastado, pago realizado o movimiento financiero
+confirmado.
+
+La Realidad Financiera deberá utilizar únicamente la información persistente
+que corresponda de acuerdo con las reglas de negocio definidas para los
+eventos confirmados.
+
+Esta decisión mantiene la Realidad Financiera como un concepto derivado y
+evita inferir información financiera a partir del simple transcurso del
+tiempo.
+
+### 6.9.12 Fecha esperada y fecha real
+
+Un `Financial Event` generado a partir de una recurrencia deberá conservar
+la fecha esperada calculada por BudgetKeep.
+
+Cuando el Usuario confirme que la ocurrencia sucedió en una fecha diferente,
+deberá conservarse la fecha real proporcionada por el Usuario.
+
+Ejemplo:
+
+- Fecha esperada: 15 de agosto.
+- Fecha real: 17 de agosto.
+- Estado: `CONFIRMED`.
+
+La fecha esperada no deberá modificarse para ocultar la diferencia entre lo
+planificado y lo ocurrido.
+
+La información de fecha deberá permitir posteriormente analizar
+desviaciones entre la fecha esperada y la fecha real.
+
+### 6.9.13 Importe esperado e importe real
+
+Cuando un `Income` o `Expense` defina un importe esperado o de referencia,
+dicho importe podrá utilizarse para generar las ocurrencias futuras.
+
+Cada `Financial Event` deberá conservar el importe correspondiente a su
+propia ocurrencia.
+
+El importe real de una ocurrencia podrá diferir del importe esperado o de
+referencia definido en `Income` o `Expense`.
+
+Por ejemplo:
+
+- Expense = Luz.
+- Importe esperado = $800.
+- Financial Event de agosto = $780.
+- Financial Event de octubre = $920.
+
+La modificación del importe esperado o de referencia no deberá modificar
+automáticamente los eventos históricos ya registrados.
+
+### 6.9.14 Eventos sin recurrencia
+
+BudgetKeep deberá permitir registrar eventos financieros sin
+`RecurrenceConfiguration`.
+
+Un Usuario podrá registrar directamente un evento cuando:
+
+- conozca una fecha específica;
+- el evento sea único;
+- no exista un patrón recurrente;
+- la fecha no pueda determinarse mediante una regla recurrente;
+- el evento ya haya ocurrido.
+
+Un evento registrado directamente como ocurrido podrá quedar `CONFIRMED`
+desde su creación, conforme a la información proporcionada por el Usuario.
+
+### 6.9.15 Consulta mensual
+
+BudgetKeep deberá permitir consultar los `Financial Event` correspondientes
+a un periodo mensual.
+
+La consulta deberá mostrar tanto:
+
+- eventos `EXPECTED`; como
+- eventos `CONFIRMED`.
+
+La vista mensual deberá proporcionar al Usuario una visión de los eventos
+financieros que espera que ocurran y de aquellos que ya confirmó.
+
+La consulta mensual no deberá ocultar automáticamente eventos `EXPECTED`
+cuya fecha esperada ya haya pasado.
+
+### 6.9.16 Independencia del historial
+
+Las modificaciones realizadas sobre una `RecurrenceConfiguration` deberán
+afectar únicamente las futuras ocurrencias que todavía dependan de dicha
+configuración.
+
+Las modificaciones posteriores no deberán alterar la información histórica
+de los `Financial Event` previamente registrados o confirmados.
+
+Las ocurrencias históricas deberán conservar la información que correspondía
+al momento en que fueron registradas o confirmadas.
+
+### 6.9.17 Interacción mínima del Usuario
+
+El diseño deberá minimizar el esfuerzo necesario para mantener actualizada
+la Realidad Financiera.
+
+Después de la configuración inicial de un `Income` o `Expense` recurrente,
+el Usuario no deberá capturar manualmente las fechas de cada ocurrencia.
+
+BudgetKeep deberá presentar las ocurrencias esperadas correspondientes al
+periodo consultado.
+
+La acción normal del Usuario deberá consistir en revisar las ocurrencias y
+confirmar aquellas que efectivamente hayan ocurrido.
+
+La confirmación deberá poder realizarse mediante una interacción simple
+definida por la aplicación, sin requerir que el Usuario vuelva a capturar
+toda la información del evento.
+
+### 6.9.18 Relaciones principales del dominio
+
+Las relaciones conceptuales principales serán:
+
+- User 1:N Income.
+- User 1:N Expense.
+- User 1:N StandAlone.
+- User 1:N Financial Event.
+- Income 1:N Financial Event.
+- Expense 1:N Financial Event.
+- StandAlone 1:N Financial Event.
+- Income 1:0..1 RecurrenceConfiguration.
+- Expense 1:0..1 RecurrenceConfiguration.
+- RecurrenceType 1:N RecurrenceConfiguration.
+
+Un Financial Event deberá estar asociado exactamente a una de las siguientes
+fuentes:
+
+- Income.
+- Expense.
+- StandAlone.
+
+Las relaciones específicas de `Financial Event` con otros dominios se
+definirán cuando dichos dominios sean diseñados.
+
+No se implementará una relación polimórfica genérica mediante
+`ConceptType + ConceptId` para sustituir las Foreign Keys específicas.
+
+### 6.9.19 Integridad y trazabilidad
+
+Las relaciones entre `Financial Event` y las entidades que lo originan
+deberán implementarse mediante relaciones explícitas que permitan mantener
+integridad referencial.
+
+Todo `Financial Event` deberá poder trazarse hasta exactamente una de sus
+tres posibles fuentes:
+
+- `Income`;
+- `Expense`;
+- `StandAlone`.
+
+Los eventos generados a partir de `Income` o `Expense` deberán conservar la
+trazabilidad con la definición que los originó.
+
+Los eventos registrados directamente por el Usuario mediante `StandAlone`
+deberán conservar la trazabilidad con el `StandAlone` que los originó.
+
+La existencia de una configuración de recurrencia no deberá eliminar ni
+modificar automáticamente las ocurrencias históricas.
+
+Los cambios posteriores realizados sobre `Income`, `Expense`, `StandAlone` o
+`RecurrenceConfiguration` no deberán modificar los `Financial Event`
+históricos.
+
+### 6.9.20 Alcance de la lógica de recurrencia
+
+La presente sección establece la estructura persistente necesaria para
+soportar la recurrencia y las ocurrencias financieras.
+
+La lógica de aplicación responsable de:
+
+- calcular las fechas futuras;
+- generar las ocurrencias;
+- evitar duplicados;
+- determinar el horizonte de generación;
+- presentar recordatorios;
+- procesar la confirmación del Usuario;
+- actualizar el estado del evento;
+
+será definida por las disciplinas correspondientes de Backend y
+Requerimientos Funcionales, manteniendo consistencia con las decisiones
+establecidas en esta sección.
+
+La base de datos deberá proporcionar las estructuras y restricciones
+necesarias para soportar dicha lógica sin asumir responsabilidades propias
+de la capa de aplicación.
+
+### 6.9.21 Trazabilidad de las decisiones
+
+Las decisiones de esta sección constituyen la línea base de diseño para
+Financial Events y deberán reutilizarse sin reinterpretación en:
+
+- el Modelo Lógico de Datos;
+- el Modelo Físico de Datos;
+- el Entity Relationship Diagram;
+- los scripts SQL de creación;
+- los scripts de Rollback;
+- los scripts Seed, cuando aplique;
+- la implementación del Backend;
+- las pruebas funcionales y técnicas;
+- la implementación en Azure SQL Database;
+- las futuras decisiones de los dominios que se relacionen con Financial
+  Events.
+
+Cualquier modificación posterior deberá identificarse como una nueva
+decisión de diseño, evaluar su impacto sobre los artefactos relacionados y
+obtener la aprobación correspondiente antes de incorporarse a la
+implementación.
+
+## 6.10 Decisiones Físicas — Financial Events
+
+El dominio Financial Events utilizará las decisiones físicas generales
+aprobadas en la sección 6.6 y define las siguientes decisiones específicas
+para sus entidades persistentes.
+
+Las entidades físicas del dominio serán implementadas inicialmente en el
+esquema `dbo`.
+
+El dominio está compuesto por tres posibles fuentes de Financial Event:
+
+- `Income`: definición de ingreso que podrá generar múltiples ocurrencias.
+- `Expense`: definición de gasto que podrá generar múltiples ocurrencias.
+- `StandAlone`: evento financiero registrado directamente por el Usuario,
+  sin definición previa de Income o Expense y sin recurrencia.
+
+`FinancialEvent` será la entidad central que persistirá las ocurrencias
+financieras.
+
+Las Foreign Keys utilizarán:
+
+- `ON DELETE NO ACTION`.
+- `ON UPDATE NO ACTION`.
+
+La lógica para calcular recurrencias y generar ocurrencias futuras pertenece
+a la capa de aplicación. La base de datos será responsable de preservar la
+integridad estructural de la información generada.
+
+### 6.10.1 Income
+
+La tabla `Income` representa una definición persistente de ingreso
+perteneciente a un User.
+
+#### 6.10.1.1 Columnas
+
+- `IncomeId` utilizará `BIGINT IDENTITY(1,1)` y será `NOT NULL`.
+- `UserId` utilizará `BIGINT` y será `NOT NULL`.
+- `Name` utilizará `NVARCHAR(150)` y será `NOT NULL`.
+- `IncomeTypeId` utilizará `BIGINT` y será `NOT NULL`.
+- `CurrencyId` utilizará `BIGINT` y será `NOT NULL`.
+- `ExpectedAmount` utilizará `DECIMAL(19,4)` y será `NULL`.
+- `IsActive` utilizará `BIT` y será `NOT NULL`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`.
+- `CreatedBy` utilizará `BIGINT` y será `NULL`.
+- `UpdatedAt` utilizará `DATETIME2(3)` y será `NULL`.
+- `UpdatedBy` utilizará `BIGINT` y será `NULL`.
+- `DeletedAt` utilizará `DATETIME2(3)` y será `NULL`.
+- `DeletedBy` utilizará `BIGINT` y será `NULL`.
+
+#### 6.10.1.2 Primary Key
+
+- `PK_Income` será la Primary Key de `Income` sobre `IncomeId`.
+
+#### 6.10.1.3 Foreign Keys
+
+- `FK_Income_User`:
+  `Income.UserId` → `User.UserId`.
+- `FK_Income_IncomeType`:
+  `Income.IncomeTypeId` → `IncomeType.IncomeTypeId`.
+- `FK_Income_Currency`:
+  `Income.CurrencyId` → `Currency.CurrencyId`.
+- `FK_Income_CreatedBy`:
+  `Income.CreatedBy` → `User.UserId`.
+- `FK_Income_UpdatedBy`:
+  `Income.UpdatedBy` → `User.UserId`.
+- `FK_Income_DeletedBy`:
+  `Income.DeletedBy` → `User.UserId`.
+
+Todas utilizarán `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
+
+#### 6.10.1.4 Defaults
+
+- `DF_Income_IsActive` → `1`.
+- `DF_Income_CreatedAt` → `SYSUTCDATETIME()`.
+
+No se establecerá un valor por defecto para `ExpectedAmount`.
+
+#### 6.10.1.5 Unique Constraints
+
+No se establecerá una restricción `UNIQUE` sobre `Name`.
+
+Un User podrá tener más de una definición de Income con el mismo nombre.
+
+#### 6.10.1.6 Check Constraints
+
+No se requiere un `CHECK` adicional para `Income` en esta etapa.
+
+Las reglas estructurales de recurrencia serán implementadas mediante
+`RecurrenceConfiguration`.
+
+#### 6.10.1.7 Índices
+
+Se crearán:
+
+- `IX_Income_UserId` sobre `Income(UserId)`.
+- `IX_Income_IncomeTypeId` sobre `Income(IncomeTypeId)`.
+- `IX_Income_CurrencyId` sobre `Income(CurrencyId)`.
+
+No se crearán índices adicionales sobre `Name`, `ExpectedAmount`,
+`IsActive` o columnas de auditoría sin evidencia de un patrón de consulta
+que lo justifique.
+
+#### 6.10.1.8 Reglas de Persistencia
+
+- Una definición de Income podrá existir sin Financial Event.
+- Una definición de Income podrá generar múltiples Financial Event.
+- Una definición de Income podrá tener como máximo una
+  RecurrenceConfiguration.
+- `ExpectedAmount` representa un importe esperado o de referencia.
+- La modificación de Income no deberá modificar Financial Event históricos.
+- Un cambio de moneda no deberá utilizarse para modificar el significado
+  monetario de una definición existente.
+- Si el Usuario necesita representar el mismo concepto en otra moneda,
+  deberá crearse una nueva definición de Income.
+- La eliminación funcional utilizará eliminación lógica mediante
+  `DeletedAt` y `DeletedBy`.
+
+---
+
+### 6.10.2 Expense
+
+La tabla `Expense` representa una definición persistente de gasto
+perteneciente a un User.
+
+#### 6.10.2.1 Columnas
+
+- `ExpenseId` utilizará `BIGINT IDENTITY(1,1)` y será `NOT NULL`.
+- `UserId` utilizará `BIGINT` y será `NOT NULL`.
+- `Name` utilizará `NVARCHAR(150)` y será `NOT NULL`.
+- `ExpenseCategoryId` utilizará `BIGINT` y será `NOT NULL`.
+- `ExpenseType` utilizará `VARCHAR(50)` y será `NOT NULL`.
+- `CurrencyId` utilizará `BIGINT` y será `NOT NULL`.
+- `ExpectedAmount` utilizará `DECIMAL(19,4)` y será `NULL`.
+- `IsActive` utilizará `BIT` y será `NOT NULL`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`.
+- `CreatedBy` utilizará `BIGINT` y será `NULL`.
+- `UpdatedAt` utilizará `DATETIME2(3)` y será `NULL`.
+- `UpdatedBy` utilizará `BIGINT` y será `NULL`.
+- `DeletedAt` utilizará `DATETIME2(3)` y será `NULL`.
+- `DeletedBy` utilizará `BIGINT` y será `NULL`.
+
+#### 6.10.2.2 Primary Key
+
+- `PK_Expense` será la Primary Key de `Expense` sobre `ExpenseId`.
+
+#### 6.10.2.3 Foreign Keys
+
+- `FK_Expense_User`:
+  `Expense.UserId` → `User.UserId`.
+- `FK_Expense_ExpenseCategory`:
+  `Expense.ExpenseCategoryId` → `ExpenseCategory.ExpenseCategoryId`.
+- `FK_Expense_Currency`:
+  `Expense.CurrencyId` → `Currency.CurrencyId`.
+- `FK_Expense_CreatedBy`:
+  `Expense.CreatedBy` → `User.UserId`.
+- `FK_Expense_UpdatedBy`:
+  `Expense.UpdatedBy` → `User.UserId`.
+- `FK_Expense_DeletedBy`:
+  `Expense.DeletedBy` → `User.UserId`.
+
+Todas utilizarán `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
+
+#### 6.10.2.4 Defaults
+
+- `DF_Expense_IsActive` → `1`.
+- `DF_Expense_CreatedAt` → `SYSUTCDATETIME()`.
+
+No se establecerá un valor por defecto para `ExpectedAmount`.
+
+#### 6.10.2.5 Check Constraints
+
+- `CK_Expense_ExpenseType` deberá limitar `ExpenseType` a los valores
+  funcionales aprobados:
+  - `FIXED`
+  - `VARIABLE`
+
+#### 6.10.2.6 Índices
+
+Se crearán:
+
+- `IX_Expense_UserId` sobre `Expense(UserId)`.
+- `IX_Expense_ExpenseCategoryId` sobre `Expense(ExpenseCategoryId)`.
+- `IX_Expense_CurrencyId` sobre `Expense(CurrencyId)`.
+
+No se crearán índices adicionales sobre `Name`, `ExpectedAmount`,
+`IsActive` o columnas de auditoría sin evidencia de un patrón de consulta
+que lo justifique.
+
+#### 6.10.2.7 Reglas de Persistencia
+
+- Una definición de Expense podrá existir sin Financial Event.
+- Una definición de Expense podrá generar múltiples Financial Event.
+- Una definición de Expense podrá tener como máximo una
+  RecurrenceConfiguration.
+- `ExpectedAmount` representa un importe esperado o de referencia.
+- La modificación de Expense no deberá modificar Financial Event históricos.
+- Un cambio de moneda no deberá utilizarse para modificar el significado
+  monetario de una definición existente.
+- Si el Usuario necesita representar el mismo concepto en otra moneda,
+  deberá crearse una nueva definición de Expense.
+- La eliminación funcional utilizará eliminación lógica mediante
+  `DeletedAt` y `DeletedBy`.
+
+---
+
+### 6.10.3 StandAlone
+
+La tabla `StandAlone` representa un evento financiero registrado
+directamente por el Usuario que no proviene de una definición previa de
+Income o Expense y no utiliza recurrencia.
+
+Un StandAlone podrá originar múltiples Financial Event.
+
+#### 6.10.3.1 Columnas
+
+- `StandAloneId` utilizará `BIGINT IDENTITY(1,1)` y será `NOT NULL`.
+- `UserId` utilizará `BIGINT` y será `NOT NULL`.
+- `EventType` utilizará `VARCHAR(20)` y será `NOT NULL`.
+- `Description` utilizará `NVARCHAR(500)` y será `NOT NULL`.
+- `CurrencyId` utilizará `BIGINT` y será `NOT NULL`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`.
+- `CreatedBy` utilizará `BIGINT` y será `NULL`.
+- `UpdatedAt` utilizará `DATETIME2(3)` y será `NULL`.
+- `UpdatedBy` utilizará `BIGINT` y será `NULL`.
+- `DeletedAt` utilizará `DATETIME2(3)` y será `NULL`.
+- `DeletedBy` utilizará `BIGINT` y será `NULL`.
+
+#### 6.10.3.2 Primary Key
+
+- `PK_StandAlone` será la Primary Key de `StandAlone` sobre `StandAloneId`.
+
+#### 6.10.3.3 Foreign Keys
+
+- `FK_StandAlone_User`:
+  `StandAlone.UserId` → `User.UserId`.
+- `FK_StandAlone_Currency`:
+  `StandAlone.CurrencyId` → `Currency.CurrencyId`.
+- `FK_StandAlone_CreatedBy`:
+  `StandAlone.CreatedBy` → `User.UserId`.
+- `FK_StandAlone_UpdatedBy`:
+  `StandAlone.UpdatedBy` → `User.UserId`.
+- `FK_StandAlone_DeletedBy`:
+  `StandAlone.DeletedBy` → `User.UserId`.
+
+Todas utilizarán `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
+
+#### 6.10.3.4 Defaults
+
+- `DF_StandAlone_CreatedAt` → `SYSUTCDATETIME()`.
+
+#### 6.10.3.5 Check Constraints
+
+- `CK_StandAlone_EventType` deberá limitar `EventType` a:
+  - `INCOME`
+  - `EXPENSE`
+
+#### 6.10.3.6 Índices
+
+Se crearán:
+
+- `IX_StandAlone_UserId` sobre `StandAlone(UserId)`.
+- `IX_StandAlone_CurrencyId` sobre `StandAlone(CurrencyId)`.
+
+No se crearán índices adicionales sobre `Description` o columnas de
+auditoría sin evidencia de un patrón de consulta que lo justifique.
+
+#### 6.10.3.7 Reglas de Persistencia
+
+- StandAlone no tendrá RecurrenceConfiguration.
+- Un StandAlone podrá originar múltiples Financial Event.
+- StandAlone no generará automáticamente nuevas ocurrencias mediante una
+  configuración de recurrencia.
+- Una nueva ocurrencia del mismo evento podrá registrarse utilizando el mismo
+  StandAlone como fuente.
+- StandAlone representa una fuente no recurrente.
+- `EventType` determinará si el evento corresponde a INCOME o EXPENSE.
+- La moneda pertenece al StandAlone.
+- Si el Usuario necesita registrar el mismo concepto en otra moneda,
+  deberá crearse un nuevo StandAlone.
+- La eliminación funcional utilizará eliminación lógica mediante
+  `DeletedAt` y `DeletedBy`.
+
+---
+
+### 6.10.4 FinancialEvent
+
+`FinancialEvent` será la entidad central que persistirá las ocurrencias
+financieras.
+
+Cada Financial Event deberá tener exactamente una fuente:
+
+- Income;
+- Expense;
+- StandAlone.
+
+#### 6.10.4.1 Columnas
+
+- `FinancialEventId` utilizará `BIGINT IDENTITY(1,1)` y será `NOT NULL`.
+- `UserId` utilizará `BIGINT` y será `NOT NULL`.
+- `EventType` utilizará `VARCHAR(20)` y será `NOT NULL`.
+- `IncomeId` utilizará `BIGINT` y será `NULL`.
+- `ExpenseId` utilizará `BIGINT` y será `NULL`.
+- `StandAloneId` utilizará `BIGINT` y será `NULL`.
+- `ExpectedDate` utilizará `DATE` y será `NOT NULL`.
+- `ActualDate` utilizará `DATE` y será `NULL`.
+- `ExpectedAmount` utilizará `DECIMAL(19,4)` y será `NULL`.
+- `ActualAmount` utilizará `DECIMAL(19,4)` y será `NULL`.
+- `EventStatus` utilizará `VARCHAR(20)` y será `NOT NULL`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`.
+- `CreatedBy` utilizará `BIGINT` y será `NULL`.
+- `UpdatedAt` utilizará `DATETIME2(3)` y será `NULL`.
+- `UpdatedBy` utilizará `BIGINT` y será `NULL`.
+- `DeletedAt` utilizará `DATETIME2(3)` y será `NULL`.
+- `DeletedBy` utilizará `BIGINT` y será `NULL`.
+
+#### 6.10.4.2 Primary Key
+
+- `PK_FinancialEvent` será la Primary Key de `FinancialEvent` sobre
+  `FinancialEventId`.
+
+#### 6.10.4.3 Foreign Keys
+
+- `FK_FinancialEvent_User`:
+  `FinancialEvent.UserId` → `User.UserId`.
+- `FK_FinancialEvent_Income`:
+  `FinancialEvent.IncomeId` → `Income.IncomeId`.
+- `FK_FinancialEvent_Expense`:
+  `FinancialEvent.ExpenseId` → `Expense.ExpenseId`.
+- `FK_FinancialEvent_StandAlone`:
+  `FinancialEvent.StandAloneId` → `StandAlone.StandAloneId`.
+- `FK_FinancialEvent_CreatedBy`:
+  `FinancialEvent.CreatedBy` → `User.UserId`.
+- `FK_FinancialEvent_UpdatedBy`:
+  `FinancialEvent.UpdatedBy` → `User.UserId`.
+- `FK_FinancialEvent_DeletedBy`:
+  `FinancialEvent.DeletedBy` → `User.UserId`.
+
+Todas utilizarán `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
+
+#### 6.10.4.4 Check Constraints
+
+`CK_FinancialEvent_Source` deberá garantizar que exactamente una fuente
+esté informada y que `EventType` sea consistente con la fuente: ```text
+(
+    EventType = 'INCOME'
+    AND IncomeId IS NOT NULL
+    AND ExpenseId IS NULL
+    AND StandAloneId IS NULL
+)
+OR
+(
+    EventType = 'EXPENSE'
+    AND IncomeId IS NULL
+    AND ExpenseId IS NOT NULL
+    AND StandAloneId IS NULL
+)
+OR
+(
+    StandAloneId IS NOT NULL
+    AND IncomeId IS NULL
+    AND ExpenseId IS NULL
+)
+
 # 7. Convenciones de Diseño
 
 Las convenciones definidas en esta sección establecen el estándar oficial para la construcción de todos los objetos de la base de datos de BudgetKeep.
@@ -1210,7 +2016,7 @@ Los dominios funcionales definidos para BudgetKeep son:
 | Identity & Security | CLOSED |
 | Catalogs | CLOSED
 | Financial Resources | CLOSED |
-| Financial Events | Pendiente |
+| Financial Events | Diseño lógico en construcción |
 | Financial Planning | Pendiente |
 | Financial Obligations | Pendiente |
 | Audit | Pendiente |
@@ -1228,6 +2034,17 @@ Las entidades de Financial Resources definidas para esta etapa son:
 
 - Financial Resource
 - Currency
+
+### Entidades definidas de Financial Events
+
+Las entidades de Financial Events definidas para esta etapa son:
+
+- Income
+- Expense
+- StandAlone
+- Financial Event
+- RecurrenceType
+- RecurrenceConfiguration
 
 ---
 
@@ -2644,3 +3461,1086 @@ Artefactos completados:
 
 La implementación del dominio fue ejecutada correctamente en Azure SQL
 y validada mediante el script correspondiente.
+
+### 13.3.23 Dominio: Financial Events
+
+El dominio Financial Events agrupa las entidades responsables de representar
+las definiciones de ingresos y gastos del Usuario, las reglas opcionales de
+recurrencia y las ocurrencias financieras correspondientes.
+
+Las entidades que conforman este dominio son:
+
+- Income
+- Expense
+- Financial Event
+- StandAlone
+- RecurrenceType
+- RecurrenceConfiguration
+
+El modelo separa la definición financiera de su ocurrencia.
+
+`Income` y `Expense` representan definiciones configuradas por el Usuario.
+
+`Financial Event` representa una ocurrencia financiera concreta.
+
+Una misma definición de Income o Expense podrá generar múltiples Financial
+Event a lo largo del tiempo.
+
+La recurrencia es opcional. Cuando existe, BudgetKeep utilizará la
+RecurrenceConfiguration para determinar automáticamente las futuras
+ocurrencias esperadas sin requerir que el Usuario registre manualmente cada
+fecha.
+
+#### 13.3.23.1 Entity: Income
+
+##### 13.3.23.1.1 Objetivo
+
+Representar una definición de ingreso configurada por un Usuario.
+
+Un Income representa el concepto de ingreso que el Usuario desea controlar,
+organizar y, cuando corresponda, utilizar como base para generar futuras
+ocurrencias financieras.
+
+Ejemplos:
+
+- Salario.
+- Salario secundario.
+- Freelance.
+- Ingresos por inversiones.
+- Otros ingresos definidos por el Usuario.
+
+##### 13.3.23.1.2 Responsabilidades
+
+La entidad Income es responsable de:
+
+- Identificar el ingreso configurado por el Usuario.
+- Asociar el ingreso con su propietario.
+- Identificar el nombre del ingreso.
+- Identificar su tipo u origen.
+- Identificar la moneda utilizada.
+- Mantener un importe esperado o de referencia cuando corresponda.
+- Asociar opcionalmente una configuración de recurrencia.
+- Mantener la definición del ingreso independientemente de sus ocurrencias.
+
+##### 13.3.23.1.3 Relaciones
+
+Income mantiene las siguientes relaciones:
+
+- User 1:N Income.
+- Currency 1:N Income.
+- IncomeType 1:N Income.
+- Income 1:0..1 RecurrenceConfiguration.
+- Income 1:N Financial Event.
+
+Cada Income pertenece obligatoriamente a un único User.
+
+Cada Income utiliza una única Currency.
+
+Cada Income utiliza un único IncomeType.
+
+Un Income podrá tener como máximo una RecurrenceConfiguration.
+
+Una RecurrenceConfiguration podrá estar asociada a un único Income.
+
+Un Income podrá generar múltiples Financial Event.
+
+Cada Financial Event generado a partir de un Income deberá conservar la
+referencia al Income que lo originó.
+
+##### 13.3.23.1.4 Reglas Generales
+
+- Todo Income deberá pertenecer a un User.
+- Todo Income deberá tener un nombre.
+- Todo Income deberá utilizar una Currency válida.
+- Todo Income deberá utilizar un IncomeType válido.
+- La recurrencia será opcional.
+- Un Income podrá generar múltiples Financial Event.
+- La modificación de un Income no deberá modificar automáticamente los
+  Financial Event históricos.
+- El importe definido en Income representará un importe esperado o de
+  referencia y no sustituirá el importe real de una ocurrencia confirmada.
+- Un Income podrá existir sin Financial Event cuando todavía no haya
+  ocurrido ninguna de sus ocurrencias.
+
+##### 13.3.23.1.5 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|----------|-------------|-------------|
+| IncomeId | Identificador único de la definición de ingreso. | Sí |
+| UserId | Usuario propietario del ingreso. | Sí |
+| Name | Nombre del ingreso. | Sí |
+| IncomeTypeId | Tipo u origen del ingreso. | Sí |
+| CurrencyId | Moneda utilizada para expresar el ingreso. | Sí |
+| ExpectedAmount | Importe esperado o de referencia para futuras ocurrencias. | No |
+| IsActive | Indica si la definición del ingreso continúa disponible para nuevas ocurrencias. | Sí |
+| CreatedAt | Fecha y hora de creación. | Sí |
+| CreatedBy | Usuario responsable de la creación. | No |
+| UpdatedAt | Fecha y hora de la última modificación. | No |
+| UpdatedBy | Usuario responsable de la última modificación. | No |
+| DeletedAt | Fecha y hora de eliminación lógica. | No |
+| DeletedBy | Usuario responsable de la eliminación lógica. | No |
+
+---
+
+#### 13.3.23.2 Entity: Expense
+
+##### 13.3.23.2.1 Objetivo
+
+Representar una definición de gasto configurada por un Usuario.
+
+Un Expense representa el concepto de gasto que el Usuario desea controlar,
+organizar y, cuando corresponda, utilizar como base para generar futuras
+ocurrencias financieras.
+
+Ejemplos:
+
+- Renta de casa.
+- Luz.
+- Agua.
+- Supermercado.
+- Gasolina.
+- Otros gastos definidos por el Usuario.
+
+##### 13.3.23.2.2 Responsabilidades
+
+La entidad Expense es responsable de:
+
+- Identificar el gasto configurado por el Usuario.
+- Asociar el gasto con su propietario.
+- Identificar el nombre del gasto.
+- Identificar su categoría.
+- Identificar si se trata de un gasto fijo o variable.
+- Identificar la moneda utilizada.
+- Mantener un importe esperado o de referencia cuando corresponda.
+- Asociar opcionalmente una configuración de recurrencia.
+- Mantener la definición del gasto independientemente de sus ocurrencias.
+
+##### 13.3.23.2.3 Relaciones
+
+Expense mantiene las siguientes relaciones:
+
+- User 1:N Expense.
+- Currency 1:N Expense.
+- ExpenseCategory 1:N Expense.
+- Expense 1:0..1 RecurrenceConfiguration.
+- Expense 1:N Financial Event.
+
+Cada Expense pertenece obligatoriamente a un único User.
+
+Cada Expense utiliza una única Currency.
+
+Cada Expense utiliza una única ExpenseCategory.
+
+Un Expense podrá tener como máximo una RecurrenceConfiguration.
+
+Una RecurrenceConfiguration podrá estar asociada a un único Expense.
+
+Un Expense podrá generar múltiples Financial Event.
+
+Cada Financial Event generado a partir de un Expense deberá conservar la
+referencia al Expense que lo originó.
+
+##### 13.3.23.2.4 Reglas Generales
+
+- Todo Expense deberá pertenecer a un User.
+- Todo Expense deberá tener un nombre.
+- Todo Expense deberá utilizar una Currency válida.
+- Todo Expense deberá utilizar una ExpenseCategory válida.
+- Todo Expense deberá identificar si es Fixed o Variable.
+- La recurrencia será opcional.
+- Un Expense podrá generar múltiples Financial Event.
+- La modificación de un Expense no deberá modificar automáticamente los
+  Financial Event históricos.
+- El importe definido en Expense representará un importe esperado o de
+  referencia y no sustituirá el importe real de una ocurrencia confirmada.
+- Un Expense podrá existir sin Financial Event cuando todavía no haya
+  ocurrido ninguna de sus ocurrencias.
+
+##### 13.3.23.2.5 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|----------|-------------|-------------|
+| ExpenseId | Identificador único de la definición de gasto. | Sí |
+| UserId | Usuario propietario del gasto. | Sí |
+| Name | Nombre del gasto. | Sí |
+| ExpenseCategoryId | Categoría del gasto. | Sí |
+| ExpenseType | Indica si el gasto es Fixed o Variable. | Sí |
+| CurrencyId | Moneda utilizada para expresar el gasto. | Sí |
+| ExpectedAmount | Importe esperado o de referencia para futuras ocurrencias. | No |
+| IsActive | Indica si la definición del gasto continúa disponible para nuevas ocurrencias. | Sí |
+| CreatedAt | Fecha y hora de creación. | Sí |
+| CreatedBy | Usuario responsable de la creación. | No |
+| UpdatedAt | Fecha y hora de la última modificación. | No |
+| UpdatedBy | Usuario responsable de la última modificación. | No |
+| DeletedAt | Fecha y hora de eliminación lógica. | No |
+| DeletedBy | Usuario responsable de la eliminación lógica. | No |
+
+---
+
+#### 13.3.23.3 Entity: Financial Event
+
+##### 13.3.23.3.1 Objetivo
+
+Representar una ocurrencia financiera concreta correspondiente a un ingreso
+o gasto esperado o registrado por el Usuario.
+
+Financial Event constituye el registro persistente de la ocurrencia y
+permite conservar separadamente la información esperada y la información
+real confirmada por el Usuario.
+
+##### 13.3.23.3.2 Responsabilidades
+
+La entidad Financial Event es responsable de:
+
+- Identificar una ocurrencia financiera.
+- Asociar la ocurrencia con su User.
+- Identificar si corresponde a Income o Expense.
+- Identificar la fuente que originó la ocurrencia mediante Income, Expense o
+  StandAlone.
+- Mantener la fecha esperada.
+- Mantener la fecha real cuando el Usuario confirme la ocurrencia.
+- Mantener el importe esperado.
+- Mantener el importe real confirmado.
+- Mantener el estado de la ocurrencia.
+- Conservar la información histórica de la ocurrencia.
+
+##### 13.3.23.3.3 Relaciones
+
+Financial Event mantiene las siguientes relaciones:
+
+- User 1:N Financial Event.
+- Income 1:N Financial Event.
+- Expense 1:N Financial Event.
+- StandAlone 1:N Financial Event.
+
+Un Financial Event pertenece obligatoriamente a un único User.
+
+Un Financial Event deberá estar asociado a exactamente una de las siguientes
+fuentes:
+
+- Income.
+- Expense.
+- StandAlone.
+
+Un Financial Event no podrá estar asociado simultáneamente a más de una
+fuente.
+
+Cuando la fuente sea Income, FinancialEvent.IncomeId deberá estar informado.
+
+Cuando la fuente sea Expense, FinancialEvent.ExpenseId deberá estar
+informado.
+
+Cuando la fuente sea StandAlone, FinancialEvent.StandAloneId deberá estar
+informado.
+
+##### 13.3.23.3.4 Reglas Generales
+
+- Todo Financial Event deberá pertenecer a un User.
+- Todo Financial Event deberá tener un EventType válido.
+- EventType deberá identificar si el evento corresponde a INCOME o EXPENSE.
+- Todo Financial Event deberá tener exactamente una fuente.
+- La fuente de un Financial Event deberá ser Income, Expense o StandAlone.
+- IncomeId, ExpenseId y StandAloneId no podrán estar informados
+  simultáneamente.
+- IncomeId, ExpenseId y StandAloneId no podrán estar los tres en NULL.
+- Cuando IncomeId esté informado, ExpenseId y StandAloneId deberán estar en
+  NULL.
+- Cuando ExpenseId esté informado, IncomeId y StandAloneId deberán estar en
+  NULL.
+- Cuando StandAloneId esté informado, IncomeId y ExpenseId deberán estar en
+  NULL.
+- Un Financial Event generado automáticamente a partir de una recurrencia
+  deberá iniciar en estado EXPECTED.
+- Un Financial Event generado desde StandAlone podrá iniciar en estado
+  CONFIRMED cuando el Usuario indique que el evento ya ocurrió.
+- Un Financial Event EXPECTED no deberá considerarse parte de la Realidad
+  Financiera confirmada.
+- La llegada o el vencimiento de ExpectedDate no deberá cambiar
+  automáticamente el estado del evento.
+- El Usuario deberá confirmar explícitamente la ocurrencia.
+- La confirmación deberá permitir al Usuario registrar el importe real de
+  la ocurrencia.
+- Al confirmar un evento, ActualAmount deberá representar el importe real
+  informado por el Usuario.
+- ExpectedAmount y ActualAmount podrán ser diferentes.
+- Un evento CONFIRMED deberá conservar la información proporcionada por el
+  Usuario.
+- Un evento EXPECTED que no sea confirmado deberá permanecer EXPECTED,
+  independientemente de que ExpectedDate haya pasado.
+- Un evento confirmado podrá tener una ActualDate diferente de ExpectedDate.
+- La modificación de una configuración de recurrencia no deberá modificar
+  Financial Event históricos.
+- La modificación de Income, Expense o StandAlone no deberá modificar
+  Financial Event históricos.
+
+##### 13.3.23.3.5 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|----------|-------------|-------------|
+| FinancialEventId | Identificador único de la ocurrencia financiera. | Sí |
+| UserId | Usuario propietario del evento. | Sí |
+| EventType | Indica si la ocurrencia corresponde a Income o Expense. | Sí |
+| IncomeId | Definición de Income que originó la ocurrencia. | No |
+| ExpenseId | Definición de Expense que originó la ocurrencia. | No |
+| StandAloneId | Evento StandAlone que originó la ocurrencia. | No |
+| ExpectedDate | Fecha esperada calculada o registrada para la ocurrencia. | Sí |
+| ActualDate | Fecha real informada por el Usuario al confirmar la ocurrencia. | No |
+| ExpectedAmount | Importe esperado o de referencia para la ocurrencia. | No |
+| ActualAmount | Importe real informado por el Usuario al confirmar la ocurrencia. | No |
+| EventStatus | Estado de la ocurrencia. | Sí |
+| CreatedAt | Fecha y hora de creación del evento. | Sí |
+| CreatedBy | Usuario responsable de la creación. | No |
+| UpdatedAt | Fecha y hora de la última modificación. | No |
+| UpdatedBy | Usuario responsable de la última modificación. | No |
+| DeletedAt | Fecha y hora de eliminación lógica. | No |
+| DeletedBy | Usuario responsable de la eliminación lógica. | No |
+
+##### 13.3.23.3.6 Estados de Financial Event
+
+Los estados definidos para Financial Event son:
+
+- `EXPECTED`: ocurrencia prevista por BudgetKeep o registrada como
+  esperada, pero todavía no confirmada por el Usuario.
+- `CONFIRMED`: ocurrencia confirmada explícitamente por el Usuario.
+
+La base de datos no deberá cambiar automáticamente `EXPECTED` a
+`CONFIRMED` por el simple transcurso del tiempo.
+
+
+#### 13.3.23.4 Entity: StandAlone
+
+##### 13.3.23.4.1 Objetivo
+
+Representar un evento financiero registrado directamente por el Usuario que
+no proviene de una definición previa de Income o Expense y que no utiliza una
+configuración de recurrencia.
+
+StandAlone constituye una de las tres posibles fuentes de Financial Event:
+
+- Income.
+- Expense.
+- StandAlone.
+
+A diferencia de Income y Expense, StandAlone no utiliza una configuración de
+recurrencia ni genera automáticamente ocurrencias futuras.
+
+Un mismo StandAlone podrá utilizarse como fuente de múltiples Financial Event
+cuando el mismo tipo de evento vuelva a ocurrir y el Usuario lo registre
+nuevamente.
+
+##### 13.3.23.4.2 Responsabilidades
+
+La entidad StandAlone es responsable de:
+
+- Identificar el evento financiero registrado directamente por el Usuario.
+- Asociar el evento con su propietario.
+- Identificar si el evento corresponde a un ingreso o un gasto.
+- Proporcionar una descripción del evento.
+- Identificar la moneda utilizada.
+- Servir como fuente para la creación del Financial Event correspondiente.
+- Mantener la información propia del origen StandAlone separada de la
+  información común de Financial Event.
+
+##### 13.3.23.4.3 Fuera del Alcance
+
+StandAlone no será responsable de:
+
+- Generar recurrencias.
+- Administrar configuraciones de recurrencia.
+- Representar una definición recurrente de Income o Expense.
+- Administrar el estado de Financial Event.
+- Sustituir Financial Event como registro de la ocurrencia financiera.
+- Mantener información que corresponda exclusivamente al registro de la
+  ocurrencia en Financial Event.
+
+##### 13.3.23.4.4 Relaciones
+
+StandAlone mantiene las siguientes relaciones:
+
+- User 1:N StandAlone.
+- Currency 1:N StandAlone.
+- StandAlone 1:N Financial Event.
+
+Cada StandAlone pertenece obligatoriamente a un único User.
+
+Cada StandAlone utiliza una única Currency.
+
+Un StandAlone podrá originar múltiples Financial Event.
+
+Un Financial Event podrá estar asociado con un único StandAlone cuando ésta
+sea su fuente.
+
+##### 13.3.23.4.5 Reglas Generales
+
+- Todo StandAlone deberá pertenecer a un User.
+- Todo StandAlone deberá tener un EventType válido.
+- EventType deberá identificar si el evento corresponde a INCOME o EXPENSE.
+- Todo StandAlone deberá tener una Description.
+- Todo StandAlone deberá utilizar una Currency válida.
+- StandAlone no tendrá RecurrenceConfiguration.
+- Un StandAlone representa una fuente no recurrente de Financial Event.
+- La moneda de un StandAlone no deberá modificarse como parte de una
+  modificación del evento.
+- Si el Usuario necesita registrar el mismo concepto en otra moneda, deberá
+  crearse un nuevo StandAlone.
+- Un StandAlone no deberá duplicar la información común que pertenece a
+  Financial Event.
+
+##### 13.3.23.4.6 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|----------|-------------|-------------|
+| StandAloneId | Identificador único del evento StandAlone. | Sí |
+| UserId | Usuario propietario del evento. | Sí |
+| EventType | Indica si el evento corresponde a INCOME o EXPENSE. | Sí |
+| Description | Descripción del evento financiero. | Sí |
+| CurrencyId | Moneda utilizada para expresar el evento. | Sí |
+| CreatedAt | Fecha y hora de creación del registro. | Sí |
+| CreatedBy | Usuario responsable de la creación. | No |
+| UpdatedAt | Fecha y hora de la última modificación. | No |
+| UpdatedBy | Usuario responsable de la última modificación. | No |
+| DeletedAt | Fecha y hora de eliminación lógica. | No |
+| DeletedBy | Usuario responsable de la eliminación lógica. | No |
+
+---
+
+#### 13.3.23.5 Entity: RecurrenceType
+
+##### 13.3.23.5.1 Objetivo
+
+Representar el catálogo de reglas de calendario soportadas por BudgetKeep
+para determinar las fechas de futuras ocurrencias.
+
+##### 13.3.23.5.2 Responsabilidades
+
+RecurrenceType es responsable de:
+
+- Identificar una regla de calendario.
+- Proporcionar un código estable para la regla.
+- Proporcionar una descripción comprensible de la regla.
+- Permitir que RecurrenceConfiguration utilice reglas controladas.
+
+##### 13.3.23.5.3 Relaciones
+
+RecurrenceType mantiene una relación 1:N con RecurrenceConfiguration.
+
+Un RecurrenceType podrá ser utilizado por múltiples configuraciones de
+recurrencia.
+
+##### 13.3.23.5.4 Reglas Generales
+
+- Cada RecurrenceType deberá tener un Code único.
+- Code deberá ser estable y no depender del nombre mostrado al Usuario.
+- Solo los tipos activos podrán utilizarse para nuevas configuraciones.
+- La definición de la regla deberá representar un patrón de calendario y
+  no asumir que toda recurrencia consiste en sumar una cantidad fija de días.
+
+##### 13.3.23.5.5 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|----------|-------------|-------------|
+| RecurrenceTypeId | Identificador único del tipo de recurrencia. | Sí |
+| Code | Código único y estable de la regla de recurrencia. | Sí |
+| Name | Nombre descriptivo de la regla. | Sí |
+| Description | Descripción del comportamiento de la regla. | No |
+| IsActive | Indica si la regla está disponible para nuevas configuraciones. | Sí |
+| CreatedAt | Fecha y hora de creación. | Sí |
+| CreatedBy | Usuario responsable de la creación. | No |
+| UpdatedAt | Fecha y hora de la última modificación. | No |
+| UpdatedBy | Usuario responsable de la última modificación. | No |
+
+##### 13.3.23.5.6 Reglas iniciales
+
+El catálogo deberá soportar como mínimo las siguientes reglas:
+
+- `MONTHLY_DAY`: un día específico de cada mes.
+- `MONTHLY_15_LAST`: día 15 y último día de cada mes.
+- `WEEKLY_WEEKDAY`: un día específico de la semana cada semana.
+- `BIWEEKLY_WEEKDAY`: un día específico de la semana cada dos semanas,
+  determinado mediante una fecha de referencia.
+- `ANNUAL_DATE`: una fecha específica de cada año.
+
+La denominación mostrada al Usuario podrá ser independiente del Code
+técnico.
+
+---
+
+#### 13.3.23.6 Entity: RecurrenceConfiguration
+
+##### 13.3.23.6.1 Objetivo
+
+Representar la configuración concreta de recurrencia asociada a una
+definición de Income o Expense.
+
+La configuración permitirá que BudgetKeep determine automáticamente las
+fechas futuras de las ocurrencias sin que el Usuario tenga que registrarlas
+individualmente.
+
+Una RecurrenceConfiguration deberá pertenecer a un Income o a un Expense,
+pero nunca a ambos.
+
+##### 13.3.23.6.2 Responsabilidades
+
+RecurrenceConfiguration es responsable de:
+
+- Identificar la definición de Income o Expense a la que pertenece.
+- Asociar la definición financiera con una regla de recurrencia.
+- Identificar la fecha a partir de la cual aplica la recurrencia.
+- Identificar opcionalmente la fecha en la que termina.
+- Mantener los parámetros requeridos por la regla de calendario.
+- Permitir activar o desactivar una recurrencia.
+- Proporcionar la información necesaria para calcular ocurrencias futuras.
+- Permitir que BudgetKeep genere automáticamente ocurrencias esperadas sin
+  requerir que el Usuario registre manualmente cada fecha.
+
+##### 13.3.23.6.3 Relaciones
+
+RecurrenceConfiguration mantiene las siguientes relaciones:
+
+- Income 1:0..1 RecurrenceConfiguration.
+- Expense 1:0..1 RecurrenceConfiguration.
+- RecurrenceType 1:N RecurrenceConfiguration.
+
+Una RecurrenceConfiguration deberá estar asociada a un único Income o a un
+único Expense.
+
+Una RecurrenceConfiguration no podrá estar asociada simultáneamente a un
+Income y a un Expense.
+
+Una definición de Income podrá tener como máximo una
+RecurrenceConfiguration.
+
+Una definición de Expense podrá tener como máximo una
+RecurrenceConfiguration.
+
+Una RecurrenceConfiguration deberá utilizar un único RecurrenceType.
+
+##### 13.3.23.6.4 Reglas Generales
+
+- Toda RecurrenceConfiguration deberá utilizar un RecurrenceType válido.
+- Toda RecurrenceConfiguration deberá tener una fecha de inicio.
+- La fecha de finalización será opcional.
+- Una configuración activa podrá generar futuras ocurrencias esperadas.
+- Una configuración inactiva no deberá generar nuevas ocurrencias.
+- La configuración deberá contener los parámetros necesarios para la regla
+  seleccionada.
+- Una RecurrenceConfiguration deberá tener exactamente uno de los siguientes
+  valores:
+  - IncomeId.
+  - ExpenseId.
+- IncomeId y ExpenseId no podrán estar informados simultáneamente.
+- IncomeId y ExpenseId no podrán estar ambos en NULL.
+- Una configuración de recurrencia no representa una ocurrencia financiera.
+- Modificar la configuración no deberá modificar Financial Event históricos.
+- Las fechas futuras deberán calcularse conforme a la regla de calendario
+  seleccionada.
+- Una regla mensual no deberá interpretarse como una simple suma fija de
+  días.
+- Una regla catorcenal deberá utilizar una fecha de referencia para
+  determinar la secuencia de ocurrencias.
+- Los parámetros de calendario deberán ser consistentes con el
+  RecurrenceType seleccionado.
+
+##### 13.3.23.6.5 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|----------|-------------|-------------|
+| RecurrenceConfigurationId | Identificador único de la configuración. | Sí |
+| IncomeId | Definición de Income a la que pertenece la configuración. | Condicional |
+| ExpenseId | Definición de Expense a la que pertenece la configuración. | Condicional |
+| RecurrenceTypeId | Regla de calendario utilizada. | Sí |
+| StartDate | Fecha a partir de la cual aplica la recurrencia. | Sí |
+| EndDate | Fecha en la que deja de aplicar la recurrencia. | No |
+| DayOfMonth | Día del mes utilizado por reglas que requieren un día específico. | Condicional |
+| DayOfWeek | Día de la semana utilizado por reglas semanales o catorcenales. | Condicional |
+| AnchorDate | Fecha de referencia utilizada para establecer la secuencia de recurrencias. | Condicional |
+| IsActive | Indica si la configuración continúa vigente. | Sí |
+| CreatedAt | Fecha y hora de creación. | Sí |
+| CreatedBy | Usuario responsable de la creación. | No |
+| UpdatedAt | Fecha y hora de la última modificación. | No |
+| UpdatedBy | Usuario responsable de la última modificación. | No |
+| DeletedAt | Fecha y hora de eliminación lógica. | No |
+| DeletedBy | Usuario responsable de la eliminación lógica. | No |
+
+Los atributos `DayOfMonth`, `DayOfWeek` y `AnchorDate` serán obligatorios o
+nulos de acuerdo con las necesidades del `RecurrenceType` seleccionado.
+
+La validación específica de los parámetros requeridos por cada tipo de
+recurrencia será definida durante el diseño físico y la implementación de
+la lógica correspondiente.
+
+---
+
+#### 13.3.23.7 Relaciones del Dominio Financial Events
+
+Las relaciones del dominio Financial Events se definen de la siguiente
+manera:
+
+##### User
+
+- User 1:N Income.
+  - Income.UserId referencia User.UserId.
+
+- User 1:N Expense.
+  - Expense.UserId referencia User.UserId.
+
+- User 1:N StandAlone.
+  - StandAlone.UserId referencia User.UserId.
+
+- User 1:N Financial Event.
+  - FinancialEvent.UserId referencia User.UserId.
+
+##### Income
+
+- Income 1:N Financial Event.
+  - FinancialEvent.IncomeId referencia Income.IncomeId.
+  - Un Income podrá generar múltiples Financial Event.
+
+- Income 1:0..1 RecurrenceConfiguration.
+  - RecurrenceConfiguration.IncomeId referencia Income.IncomeId.
+  - Un Income podrá tener como máximo una RecurrenceConfiguration.
+
+##### Expense
+
+- Expense 1:N Financial Event.
+  - FinancialEvent.ExpenseId referencia Expense.ExpenseId.
+  - Un Expense podrá generar múltiples Financial Event.
+
+- Expense 1:0..1 RecurrenceConfiguration.
+  - RecurrenceConfiguration.ExpenseId referencia Expense.ExpenseId.
+  - Un Expense podrá tener como máximo una RecurrenceConfiguration.
+
+##### StandAlone
+
+- StandAlone 1:N Financial Event.
+  - FinancialEvent.StandAloneId referencia StandAlone.StandAloneId.
+  - Un StandAlone podrá originar múltiples Financial Event.
+
+##### Currency
+
+- Currency 1:N Income.
+  - Income.CurrencyId referencia Currency.CurrencyId.
+
+- Currency 1:N Expense.
+  - Expense.CurrencyId referencia Currency.CurrencyId.
+
+- Currency 1:N StandAlone.
+  - StandAlone.CurrencyId referencia Currency.CurrencyId.
+
+##### IncomeType
+
+- IncomeType 1:N Income.
+  - Income.IncomeTypeId referencia IncomeType.IncomeTypeId.
+
+##### ExpenseCategory
+
+- ExpenseCategory 1:N Expense.
+  - Expense.ExpenseCategoryId referencia ExpenseCategory.ExpenseCategoryId.
+
+##### RecurrenceType
+
+- RecurrenceType 1:N RecurrenceConfiguration.
+  - RecurrenceConfiguration.RecurrenceTypeId referencia
+    RecurrenceType.RecurrenceTypeId.
+
+##### RecurrenceConfiguration
+
+- Una RecurrenceConfiguration deberá pertenecer a un Income o a un Expense.
+- Una RecurrenceConfiguration no podrá pertenecer simultáneamente a un
+  Income y un Expense.
+- IncomeId y ExpenseId serán opcionales individualmente, pero exactamente uno
+  de ellos deberá estar informado.
+- Una RecurrenceConfiguration no representa una ocurrencia financiera.
+- La modificación de una RecurrenceConfiguration no deberá modificar
+  Financial Event históricos.
+
+#### 13.3.23.8 Reglas de Integridad del Dominio
+
+Las siguientes reglas deberán preservarse durante el diseño lógico, el diseño
+físico y la implementación del dominio Financial Events.
+
+##### Financial Event
+
+1. Todo Financial Event deberá pertenecer obligatoriamente a un User.
+
+2. Todo Financial Event deberá tener un EventType válido.
+
+3. EventType deberá identificar si el evento corresponde a INCOME o EXPENSE.
+
+4. Todo Financial Event deberá tener exactamente una fuente.
+
+5. La fuente de un Financial Event deberá ser Income, Expense o StandAlone.
+
+6. IncomeId, ExpenseId y StandAloneId no podrán estar los tres en NULL.
+
+7. IncomeId, ExpenseId y StandAloneId no podrán estar informados
+   simultáneamente.
+
+8. Cuando IncomeId esté informado, ExpenseId y StandAloneId deberán estar
+   en NULL.
+
+9. Cuando ExpenseId esté informado, IncomeId y StandAloneId deberán estar
+   en NULL.
+
+10. Cuando StandAloneId esté informado, IncomeId y ExpenseId deberán estar
+    en NULL.
+
+11. Un Financial Event generado automáticamente a partir de una recurrencia
+    deberá iniciar en estado EXPECTED.
+
+12. Un Financial Event generado desde StandAlone podrá iniciar en estado
+    CONFIRMED cuando el Usuario indique que el evento ya ocurrió.
+
+13. Un Financial Event EXPECTED no deberá considerarse parte de la Realidad
+    Financiera confirmada.
+
+14. La llegada o el vencimiento de ExpectedDate no deberá cambiar
+    automáticamente el estado del evento.
+
+15. El estado EXPECTED deberá permanecer sin cambios hasta que exista una
+    acción explícita del Usuario.
+
+16. Un Financial Event CONFIRMED deberá tener ActualDate y ActualAmount
+    informados.
+
+17. Un Financial Event EXPECTED no deberá tener ActualDate ni ActualAmount.
+
+18. La confirmación de un Financial Event deberá permitir al Usuario informar
+    el importe real de la ocurrencia.
+
+19. ExpectedAmount y ActualAmount podrán ser diferentes.
+
+20. ExpectedDate y ActualDate podrán ser diferentes.
+
+21. ExpectedAmount representará el importe esperado o de referencia de la
+    ocurrencia.
+
+22. ActualAmount representará exclusivamente el importe real informado por el
+    Usuario al confirmar la ocurrencia.
+
+23. ActualAmount será la información utilizada como importe confirmado para
+    efectos de la Realidad Financiera.
+
+24. La modificación de Income, Expense o StandAlone no deberá modificar
+    automáticamente Financial Event históricos.
+
+25. La modificación de RecurrenceConfiguration no deberá modificar
+    Financial Event históricos.
+
+26. Los Financial Event históricos deberán conservar la información que
+    correspondía a la ocurrencia cuando fueron registrados o confirmados.
+
+##### RecurrenceConfiguration
+
+24. Toda RecurrenceConfiguration deberá utilizar un RecurrenceType válido.
+
+25. Toda RecurrenceConfiguration deberá tener StartDate.
+
+26. EndDate será opcional.
+
+27. Una RecurrenceConfiguration deberá estar asociada a un Income o a un
+    Expense.
+
+28. Una RecurrenceConfiguration no podrá estar asociada simultáneamente a un
+    Income y un Expense.
+
+29. IncomeId y ExpenseId no podrán estar ambos en NULL.
+
+30. IncomeId y ExpenseId no podrán estar ambos informados.
+
+31. Una definición de Income podrá tener como máximo una
+    RecurrenceConfiguration.
+
+32. Una definición de Expense podrá tener como máximo una
+    RecurrenceConfiguration.
+
+33. Una RecurrenceConfiguration activa podrá utilizarse para generar futuras
+    ocurrencias EXPECTED.
+
+34. Una RecurrenceConfiguration inactiva no deberá generar nuevas ocurrencias.
+
+35. Una RecurrenceConfiguration no representa una ocurrencia financiera.
+
+36. La configuración de recurrencia deberá contener los parámetros requeridos
+    por el RecurrenceType seleccionado.
+
+37. Una regla de recurrencia mensual deberá calcularse de acuerdo con el
+    calendario mensual correspondiente y no mediante una suma fija de días
+    cuando la regla represente una posición dentro del mes.
+
+38. La regla de recurrencia `MONTHLY_15_LAST` deberá representar el día 15 y
+    el último día de cada mes.
+
+39. Una regla de recurrencia `BIWEEKLY_WEEKDAY` deberá utilizar DayOfWeek y
+    AnchorDate para determinar la secuencia de ocurrencias cada dos semanas.
+
+40. Los parámetros de calendario que no correspondan al RecurrenceType
+    seleccionado deberán permanecer NULL.
+
+##### Income y Expense
+
+41. Todo Income deberá pertenecer a un User.
+
+42. Todo Expense deberá pertenecer a un User.
+
+43. Todo Income deberá utilizar una Currency válida.
+
+44. Todo Expense deberá utilizar una Currency válida.
+
+45. Todo Income deberá utilizar un IncomeType válido.
+
+46. Todo Expense deberá utilizar una ExpenseCategory válida.
+
+47. ExpenseType deberá identificar únicamente los valores permitidos para
+    gasto Fixed o Variable.
+
+48. ExpectedAmount de Income y Expense representará el importe esperado o de
+    referencia para futuras ocurrencias.
+
+49. El cambio de ExpectedAmount en Income o Expense no deberá modificar
+    ExpectedAmount ni ActualAmount de Financial Event históricos.
+
+##### Realidad Financiera
+
+50. Un Financial Event EXPECTED representa una expectativa o planificación,
+    no una ocurrencia financiera confirmada.
+
+51. Un Financial Event CONFIRMED representa una ocurrencia confirmada
+    explícitamente por el Usuario.
+
+52. BudgetKeep no deberá inferir que un evento ocurrió únicamente porque haya
+    llegado o pasado su fecha esperada.
+
+53. La ausencia de confirmación del Usuario no deberá convertirse
+    automáticamente en confirmación por el transcurso del tiempo.
+
+54. La Realidad Financiera confirmada deberá derivarse de Financial Event
+    CONFIRMED y de las relaciones financieras correspondientes definidas por
+    los demás dominios.
+
+##### Historial
+
+55. Los Financial Event históricos deberán conservar la información que
+    correspondía a la ocurrencia cuando fue registrada o confirmada.
+
+56. Los cambios posteriores realizados sobre Income, Expense o
+    RecurrenceConfiguration no deberán alterar los Financial Event
+    históricos.
+
+57. La diferencia entre ExpectedAmount y ActualAmount deberá conservarse para
+    permitir análisis posteriores de desviación entre lo esperado y lo real.
+
+58. La diferencia entre ExpectedDate y ActualDate deberá conservarse cuando
+    ambas existan para permitir análisis posteriores de desviación temporal.
+
+#### 13.3.23.9 Consideraciones de Implementación
+
+La implementación de Financial Events deberá mantener una separación clara
+entre las responsabilidades de persistencia de la base de datos y la lógica
+de aplicación.
+
+##### Persistencia
+
+La base de datos será responsable de:
+
+- Persistir las definiciones de Income y Expense.
+- Persistir los eventos StandAlone.
+- Persistir las configuraciones de recurrencia.
+- Persistir las ocurrencias financieras en Financial Event.
+- Mantener las relaciones entre las tres fuentes y Financial Event.
+- Garantizar la integridad referencial.
+- Garantizar las reglas estructurales de integridad definidas para
+  Financial Event, StandAlone y RecurrenceConfiguration.
+- Conservar el importe esperado y el importe real de cada ocurrencia.
+- Conservar la fecha esperada y la fecha real cuando ambas existan.
+- Conservar el estado de cada Financial Event.
+- Preservar la información histórica de las ocurrencias.
+
+##### Lógica de recurrencia
+
+La lógica de aplicación será responsable de:
+
+- Interpretar el RecurrenceType.
+- Calcular las fechas futuras de acuerdo con la regla de calendario.
+- Utilizar los parámetros de RecurrenceConfiguration para calcular las
+  ocurrencias.
+- Generar las ocurrencias futuras esperadas.
+- Evitar la generación duplicada de una misma ocurrencia.
+- Determinar el horizonte de generación de ocurrencias.
+- Mantener las ocurrencias futuras de acuerdo con los cambios válidos en la
+  configuración.
+- Presentar las ocurrencias al Usuario.
+- Solicitar o facilitar la confirmación de las ocurrencias.
+
+La base de datos no deberá implementar por sí misma la lógica necesaria para
+calcular calendarios recurrentes.
+
+##### Confirmación de ocurrencias
+
+La confirmación de una ocurrencia será una acción explícita del Usuario.
+
+La aplicación deberá permitir que el Usuario confirme una ocurrencia
+`EXPECTED` mediante una interacción simple.
+
+Al confirmar una ocurrencia, la aplicación deberá permitir registrar:
+
+- ActualDate.
+- ActualAmount.
+
+El Usuario podrá confirmar una ocurrencia utilizando una fecha real
+diferente de la fecha esperada.
+
+El Usuario podrá confirmar una ocurrencia utilizando un importe real
+diferente del importe esperado.
+
+La aplicación no deberá confirmar automáticamente una ocurrencia únicamente
+porque haya llegado o pasado su ExpectedDate.
+
+La ausencia de confirmación no deberá modificar automáticamente el estado
+del evento.
+
+##### ExpectedAmount y ActualAmount
+
+`ExpectedAmount` representa el importe esperado para una ocurrencia.
+
+`ActualAmount` representa el importe real informado por el Usuario cuando la
+ocurrencia es confirmada.
+
+Ambos valores deberán conservarse independientemente cuando existan.
+
+Ejemplo:
+
+- ExpectedAmount = 800.
+- ActualAmount = 780.
+
+La diferencia entre ambos valores deberá permanecer disponible para análisis
+posteriores.
+
+El `ExpectedAmount` de Financial Event constituirá información persistente
+que podrá utilizarse posteriormente como entrada para el dominio Financial
+Planning / Budget.
+
+El dominio Financial Events no será responsable de calcular ni administrar
+el presupuesto.
+
+##### ExpectedDate y ActualDate
+
+`ExpectedDate` representa la fecha esperada de acuerdo con la configuración
+o información registrada.
+
+`ActualDate` representa la fecha real proporcionada por el Usuario al
+confirmar la ocurrencia.
+
+Ambas fechas deberán conservarse cuando sean diferentes.
+
+La diferencia entre ExpectedDate y ActualDate deberá permanecer disponible
+para análisis posteriores.
+
+##### Eventos sin recurrencia
+
+La aplicación deberá permitir registrar Financial Event sin una
+RecurrenceConfiguration.
+
+Estos eventos podrán corresponder a:
+
+- eventos únicos;
+- eventos no recurrentes;
+- eventos cuya fecha no siga un patrón;
+- eventos cuya recurrencia no sea conocida;
+- eventos que ya ocurrieron.
+
+Cuando el Usuario registre directamente un evento que ya ocurrió, la
+aplicación podrá crearlo directamente como `CONFIRMED`, utilizando la fecha
+y el importe informados por el Usuario.
+
+##### Historial
+
+Los Financial Event históricos deberán permanecer independientes de los
+cambios posteriores realizados sobre:
+
+- Income;
+- Expense;
+- RecurrenceType;
+- RecurrenceConfiguration.
+
+Modificar una configuración de recurrencia no deberá modificar los eventos
+históricos que ya hayan sido generados.
+
+Modificar ExpectedAmount en Income o Expense no deberá modificar los
+ExpectedAmount ni ActualAmount de Financial Event históricos.
+
+##### Consulta mensual
+
+La aplicación deberá proporcionar una consulta mensual de Financial Events.
+
+La consulta deberá incluir tanto eventos:
+
+- `EXPECTED`; como
+- `CONFIRMED`.
+
+La consulta mensual deberá permitir al Usuario visualizar su realidad
+financiera desde la perspectiva de:
+
+- lo que esperaba que ocurriera;
+- lo que ya confirmó que ocurrió;
+- los importes esperados;
+- los importes reales;
+- las fechas esperadas;
+- las fechas reales cuando existan.
+
+Un evento `EXPECTED` cuya fecha haya pasado no deberá desaparecer de la
+consulta ni convertirse automáticamente en `CONFIRMED`.
+
+##### Fuente de verdad
+
+La información confirmada explícitamente por el Usuario constituye la
+fuente de verdad para determinar qué ocurrió realmente.
+
+BudgetKeep no deberá inferir una ocurrencia financiera a partir únicamente
+de:
+
+- el paso del tiempo;
+- la fecha esperada;
+- la existencia de una configuración de recurrencia;
+- el importe esperado.
+
+La existencia de una ocurrencia `EXPECTED` representa una expectativa de
+BudgetKeep y no una afirmación de que la operación financiera haya ocurrido.
+
+##### Responsabilidad de Financial Reality
+
+Financial Reality continuará siendo un concepto derivado.
+
+La Realidad Financiera confirmada deberá obtenerse mediante consultas,
+agregaciones y reglas de negocio basadas en la información persistente
+confirmada y en las relaciones financieras correspondientes.
+
+Financial Events no deberá crear una entidad independiente denominada
+Financial Reality.
+
+##### Integridad de la generación
+
+La lógica de aplicación deberá garantizar que una misma ocurrencia esperada
+no sea generada más de una vez.
+
+La identificación de una ocurrencia deberá considerar la definición
+financiera, la regla de recurrencia y la fecha correspondiente, conforme a
+las reglas que se definan para la implementación.
+
+Los mecanismos específicos para evitar duplicados serán definidos durante
+el diseño físico y la implementación del Backend, manteniendo consistencia
+con las restricciones de integridad de esta especificación.
+
+##### Evolución futura
+
+El diseño deberá permitir que posteriormente Financial Events pueda
+relacionarse con otras entidades financieras, tales como Financial
+Obligation, Debt, Financial Resource, Budget u otros conceptos que se
+definan en los dominios correspondientes.
+
+Estas relaciones no deberán anticiparse dentro de Financial Events mediante
+una relación polimórfica genérica.
+
+Cada relación futura deberá definirse explícitamente en el dominio
+correspondiente y utilizar Foreign Keys reales cuando la relación requiera
+persistencia referencial.
