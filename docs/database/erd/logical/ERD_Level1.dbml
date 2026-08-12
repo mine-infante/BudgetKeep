@@ -5,7 +5,7 @@
 //
 // Domains:
 // Identity & Security + Catalogs + Financial Resources
-// + Financial Events
+// + Financial Events + Financial Planning
 // ==========================================================
 
 // ==========================================================
@@ -343,6 +343,93 @@ Table RecurrenceConfiguration {
 }
 
 // ==========================================================
+// Financial Planning
+// ==========================================================
+
+Table FinancialStrategy {
+  FinancialStrategyId bigint [pk]
+  UserId bigint [not null]
+  Name varchar [not null]
+  Objective varchar [not null]
+  Description varchar [not null]
+  RecommendedPriority int
+  ExpectedBenefits varchar
+  Considerations varchar
+  CreatedAt datetime [not null]
+  CreatedBy bigint
+}
+
+Table FinancialStrategyItem {
+  FinancialStrategyItemId bigint [pk]
+  FinancialStrategyId bigint [not null]
+  SequenceNumber int [not null]
+  Description varchar [not null]
+  CreatedAt datetime [not null]
+  CreatedBy bigint
+}
+
+Table FinancialPlan {
+  FinancialPlanId bigint [pk]
+  UserId bigint [not null]
+  Name varchar [not null]
+  Objective varchar [not null]
+  StartDate date [not null]
+  ReviewDate date
+  LifecycleStatus varchar [not null]
+  UserNotes varchar
+  CreatedAt datetime [not null]
+  CreatedBy bigint
+  UpdatedAt datetime
+  UpdatedBy bigint
+}
+
+Table FinancialPlanItem {
+  FinancialPlanItemId bigint [pk]
+  FinancialPlanId bigint [not null]
+  SequenceNumber int [not null]
+  Description varchar [not null]
+  CreatedAt datetime [not null]
+  CreatedBy bigint
+  UpdatedAt datetime
+  UpdatedBy bigint
+  DeletedAt datetime
+  DeletedBy bigint
+}
+
+Table FinancialPlanStrategy {
+  FinancialPlanId bigint [not null]
+  FinancialStrategyId bigint [not null]
+  CreatedAt datetime [not null]
+  CreatedBy bigint
+
+  indexes {
+    (FinancialPlanId, FinancialStrategyId) [pk]
+  }
+}
+
+Table FinancialPlanResource {
+  FinancialPlanId bigint [not null]
+  FinancialResourceId bigint [not null]
+  CreatedAt datetime [not null]
+  CreatedBy bigint
+
+  indexes {
+    (FinancialPlanId, FinancialResourceId) [pk]
+  }
+}
+
+Table FinancialPlanItemEvent {
+  FinancialPlanItemId bigint [not null]
+  FinancialEventId bigint [not null]
+  CreatedAt datetime [not null]
+  CreatedBy bigint
+
+  indexes {
+    (FinancialPlanItemId, FinancialEventId) [pk]
+  }
+}
+
+// ==========================================================
 // Relaciones funcionales
 // ==========================================================
 
@@ -496,3 +583,34 @@ Ref: FinancialEvent.DeletedBy > User.UserId
 Ref: RecurrenceConfiguration.CreatedBy > User.UserId
 Ref: RecurrenceConfiguration.UpdatedBy > User.UserId
 Ref: RecurrenceConfiguration.DeletedBy > User.UserId
+
+// ==========================================================
+// Financial Planning
+// ==========================================================
+
+Ref: FinancialStrategy.UserId > User.UserId
+Ref: FinancialStrategy.CreatedBy > User.UserId
+
+Ref: FinancialStrategyItem.FinancialStrategyId > FinancialStrategy.FinancialStrategyId
+Ref: FinancialStrategyItem.CreatedBy > User.UserId
+
+Ref: FinancialPlan.UserId > User.UserId
+Ref: FinancialPlan.CreatedBy > User.UserId
+Ref: FinancialPlan.UpdatedBy > User.UserId
+
+Ref: FinancialPlanItem.FinancialPlanId > FinancialPlan.FinancialPlanId
+Ref: FinancialPlanItem.CreatedBy > User.UserId
+Ref: FinancialPlanItem.UpdatedBy > User.UserId
+Ref: FinancialPlanItem.DeletedBy > User.UserId
+
+Ref: FinancialPlanStrategy.FinancialPlanId > FinancialPlan.FinancialPlanId
+Ref: FinancialPlanStrategy.FinancialStrategyId > FinancialStrategy.FinancialStrategyId
+Ref: FinancialPlanStrategy.CreatedBy > User.UserId
+
+Ref: FinancialPlanResource.FinancialPlanId > FinancialPlan.FinancialPlanId
+Ref: FinancialPlanResource.FinancialResourceId > FinancialResource.FinancialResourceId
+Ref: FinancialPlanResource.CreatedBy > User.UserId
+
+Ref: FinancialPlanItemEvent.FinancialPlanItemId > FinancialPlanItem.FinancialPlanItemId
+Ref: FinancialPlanItemEvent.FinancialEventId > FinancialEvent.FinancialEventId
+Ref: FinancialPlanItemEvent.CreatedBy > User.UserId

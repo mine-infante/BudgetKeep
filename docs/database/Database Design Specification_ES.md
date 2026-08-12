@@ -1569,6 +1569,315 @@ OR
     AND ExpenseId IS NULL
 )
 
+## 6.11 Decisiones Físicas — Financial Planning
+
+El dominio Financial Planning utilizará las decisiones físicas generales
+aprobadas en la sección 6.6 y las decisiones de auditoría e historial
+definidas en las secciones generales de esta especificación.
+
+Las entidades físicas del dominio serán implementadas inicialmente en el
+esquema `dbo`.
+
+Las Foreign Keys utilizarán:
+
+- `ON DELETE NO ACTION`.
+- `ON UPDATE NO ACTION`.
+
+Financial Strategy será tratada como una recomendación generada por
+BudgetKeep y deberá conservarse como información histórica.
+
+Financial Plan será tratado como información perteneciente al Usuario y
+deberá conservar los Planes FINALIZED para consultas históricas.
+
+Las entidades asociativas utilizarán Primary Keys compuestas cuando no
+requieran identidad propia.
+
+Los valores calculados relacionados con el avance del Plan no serán
+persistidos. El avance deberá obtenerse mediante consultas y agregaciones
+sobre Financial Plan Item Event y Financial Event.
+
+### 6.11.1 FinancialStrategy
+
+#### Columnas
+
+- `FinancialStrategyId` utilizará `BIGINT IDENTITY(1,1)` y será `NOT NULL`.
+- `UserId` utilizará `BIGINT` y será `NOT NULL`.
+- `Name` utilizará `NVARCHAR(150)` y será `NOT NULL`.
+- `Objective` utilizará `NVARCHAR(500)` y será `NOT NULL`.
+- `Description` utilizará `NVARCHAR(500)` y será `NOT NULL`.
+- `RecommendedPriority` utilizará `INT` y será `NULL`.
+- `ExpectedBenefits` utilizará `NVARCHAR(500)` y será `NULL`.
+- `Considerations` utilizará `NVARCHAR(500)` y será `NULL`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`.
+- `CreatedBy` utilizará `BIGINT NULL`.
+
+#### Primary Key
+
+- `PK_FinancialStrategy` sobre `FinancialStrategyId`.
+
+#### Foreign Keys
+
+- `FinancialStrategy.UserId` → `User.UserId`.
+- `FinancialStrategy.CreatedBy` → `User.UserId`.
+
+Todas utilizarán `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
+
+#### Defaults
+
+- `CreatedAt` → `SYSUTCDATETIME()`.
+
+### 6.11.2 FinancialStrategyItem
+
+#### Columnas
+
+- `FinancialStrategyItemId` utilizará `BIGINT IDENTITY(1,1)` y será `NOT NULL`.
+- `FinancialStrategyId` utilizará `BIGINT` y será `NOT NULL`.
+- `SequenceNumber` utilizará `INT` y será `NOT NULL`.
+- `Description` utilizará `NVARCHAR(500)` y será `NOT NULL`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`.
+- `CreatedBy` utilizará `BIGINT NULL`.
+
+#### Primary Key
+
+- `PK_FinancialStrategyItem` sobre `FinancialStrategyItemId`.
+
+#### Foreign Keys
+
+- `FinancialStrategyItem.FinancialStrategyId`
+  → `FinancialStrategy.FinancialStrategyId`.
+- `FinancialStrategyItem.CreatedBy`
+  → `User.UserId`.
+
+Todas utilizarán `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
+
+#### Defaults
+
+- `CreatedAt` → `SYSUTCDATETIME()`.
+
+#### Constraints
+
+- `SequenceNumber` deberá ser mayor que cero.
+- La combinación `FinancialStrategyId + SequenceNumber` deberá ser única.
+
+### 6.11.3 FinancialPlan
+
+#### Columnas
+
+- `FinancialPlanId` utilizará `BIGINT IDENTITY(1,1)` y será `NOT NULL`.
+- `UserId` utilizará `BIGINT` y será `NOT NULL`.
+- `Name` utilizará `NVARCHAR(150)` y será `NOT NULL`.
+- `Objective` utilizará `NVARCHAR(500)` y será `NOT NULL`.
+- `StartDate` utilizará `DATE` y será `NOT NULL`.
+- `ReviewDate` utilizará `DATE` y será `NULL`.
+- `LifecycleStatus` utilizará `VARCHAR(20)` y será `NOT NULL`.
+- `UserNotes` utilizará `NVARCHAR(500)` y será `NULL`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`.
+- `CreatedBy` utilizará `BIGINT NULL`.
+- `UpdatedAt` utilizará `DATETIME2(3) NULL`.
+- `UpdatedBy` utilizará `BIGINT NULL`.
+
+#### Primary Key
+
+- `PK_FinancialPlan` sobre `FinancialPlanId`.
+
+#### Foreign Keys
+
+- `FinancialPlan.UserId` → `User.UserId`.
+- `FinancialPlan.CreatedBy` → `User.UserId`.
+- `FinancialPlan.UpdatedBy` → `User.UserId`.
+
+Todas utilizarán `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
+
+#### Defaults
+
+- `CreatedAt` → `SYSUTCDATETIME()`.
+
+#### Constraints
+
+- `LifecycleStatus` deberá admitir únicamente `ACTIVE` o `FINALIZED`.
+- `ReviewDate`, cuando exista, no deberá ser anterior a `StartDate`.
+
+### 6.11.4 FinancialPlanItem
+
+#### Columnas
+
+- `FinancialPlanItemId` utilizará `BIGINT IDENTITY(1,1)` y será `NOT NULL`.
+- `FinancialPlanId` utilizará `BIGINT` y será `NOT NULL`.
+- `SequenceNumber` utilizará `INT` y será `NOT NULL`.
+- `Description` utilizará `NVARCHAR(500)` y será `NOT NULL`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`.
+- `CreatedBy` utilizará `BIGINT NULL`.
+- `UpdatedAt` utilizará `DATETIME2(3) NULL`.
+- `UpdatedBy` utilizará `BIGINT NULL`.
+- `DeletedAt` utilizará `DATETIME2(3) NULL`.
+- `DeletedBy` utilizará `BIGINT NULL`.
+
+#### Primary Key
+
+- `PK_FinancialPlanItem` sobre `FinancialPlanItemId`.
+
+#### Foreign Keys
+
+- `FinancialPlanItem.FinancialPlanId`
+  → `FinancialPlan.FinancialPlanId`.
+- `FinancialPlanItem.CreatedBy`
+  → `User.UserId`.
+- `FinancialPlanItem.UpdatedBy`
+  → `User.UserId`.
+- `FinancialPlanItem.DeletedBy`
+  → `User.UserId`.
+
+Todas utilizarán `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
+
+#### Defaults
+
+- `CreatedAt` → `SYSUTCDATETIME()`.
+
+#### Constraints
+
+- `SequenceNumber` deberá ser mayor que cero.
+- La combinación `FinancialPlanId + SequenceNumber` deberá ser única
+  entre los registros activos.
+
+### 6.11.5 FinancialPlanStrategy
+
+#### Columnas
+
+- `FinancialPlanId` utilizará `BIGINT` y será `NOT NULL`.
+- `FinancialStrategyId` utilizará `BIGINT` y será `NOT NULL`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`.
+- `CreatedBy` utilizará `BIGINT NULL`.
+
+#### Primary Key
+
+- La combinación `FinancialPlanId + FinancialStrategyId`.
+
+#### Foreign Keys
+
+- `FinancialPlanStrategy.FinancialPlanId`
+  → `FinancialPlan.FinancialPlanId`.
+- `FinancialPlanStrategy.FinancialStrategyId`
+  → `FinancialStrategy.FinancialStrategyId`.
+- `FinancialPlanStrategy.CreatedBy`
+  → `User.UserId`.
+
+Todas utilizarán `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
+
+#### Defaults
+
+- `CreatedAt` → `SYSUTCDATETIME()`.
+
+### 6.11.6 FinancialPlanResource
+
+#### Columnas
+
+- `FinancialPlanId` utilizará `BIGINT` y será `NOT NULL`.
+- `FinancialResourceId` utilizará `BIGINT` y será `NOT NULL`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`.
+- `CreatedBy` utilizará `BIGINT NULL`.
+
+#### Primary Key
+
+- La combinación `FinancialPlanId + FinancialResourceId`.
+
+#### Foreign Keys
+
+- `FinancialPlanResource.FinancialPlanId`
+  → `FinancialPlan.FinancialPlanId`.
+- `FinancialPlanResource.FinancialResourceId`
+  → `FinancialResource.FinancialResourceId`.
+- `FinancialPlanResource.CreatedBy`
+  → `User.UserId`.
+
+Todas utilizarán `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
+
+#### Defaults
+
+- `CreatedAt` → `SYSUTCDATETIME()`.
+
+### 6.11.7 FinancialPlanItemEvent
+
+#### Columnas
+
+- `FinancialPlanItemId` utilizará `BIGINT` y será `NOT NULL`.
+- `FinancialEventId` utilizará `BIGINT` y será `NOT NULL`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`.
+- `CreatedBy` utilizará `BIGINT NULL`.
+
+#### Primary Key
+
+- La combinación `FinancialPlanItemId + FinancialEventId`.
+
+#### Foreign Keys
+
+- `FinancialPlanItemEvent.FinancialPlanItemId`
+  → `FinancialPlanItem.FinancialPlanItemId`.
+- `FinancialPlanItemEvent.FinancialEventId`
+  → `FinancialEvent.FinancialEventId`.
+- `FinancialPlanItemEvent.CreatedBy`
+  → `User.UserId`.
+
+Todas utilizarán `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
+
+#### Defaults
+
+- `CreatedAt` → `SYSUTCDATETIME()`.
+
+### 6.11.8 Índices
+
+Se deberán crear índices secundarios sobre:
+
+- `FinancialStrategy.UserId`.
+- `FinancialStrategyItem.FinancialStrategyId`.
+- `FinancialPlan.UserId`.
+- `FinancialPlan.LifecycleStatus`.
+- `FinancialPlanItem.FinancialPlanId`.
+- `FinancialPlanStrategy.FinancialStrategyId`.
+- `FinancialPlanResource.FinancialResourceId`.
+- `FinancialPlanItemEvent.FinancialEventId`.
+
+Las combinaciones utilizadas como Primary Key deberán proporcionar
+la cobertura necesaria para las consultas por clave compuesta.
+
+### 6.11.9 Reglas de propiedad del Usuario
+
+La aplicación deberá garantizar que los registros relacionados dentro de
+Financial Planning pertenezcan al mismo User.
+
+La base de datos deberá preservar las Foreign Keys directas de cada entidad.
+
+La validación de consistencia entre propietarios a través de entidades
+asociativas será reforzada mediante la lógica de aplicación y validaciones
+de integridad definidas para el dominio.
+
+### 6.11.10 Historial de Financial Plan
+
+Financial Plan no será eliminado físicamente como consecuencia de su
+finalización.
+
+El estado `FINALIZED` conservará el Plan y sus relaciones históricas.
+
+El avance del Plan no se almacenará como un valor persistente independiente.
+
+Deberá calcularse a partir de Financial Plan Item y Financial Plan Item Event.
+
+### 6.11.11 Trazabilidad de las decisiones
+
+Las decisiones de esta sección constituyen la línea base física para
+Financial Planning y deberán reutilizarse sin reinterpretación en:
+
+- el Modelo Físico de Datos;
+- el Entity Relationship Diagram;
+- los scripts SQL;
+- los scripts de Rollback;
+- los scripts Seed, cuando aplique;
+- la implementación Backend;
+- las validaciones;
+- la implementación en Azure SQL Database.
+
+Cualquier modificación posterior deberá identificarse como una nueva
+decisión de diseño y seguir el proceso de gobernanza correspondiente.
+
 # 7. Convenciones de Diseño
 
 Las convenciones definidas en esta sección establecen el estándar oficial para la construcción de todos los objetos de la base de datos de BudgetKeep.
@@ -2016,10 +2325,11 @@ Los dominios funcionales definidos para BudgetKeep son:
 | Identity & Security | CLOSED |
 | Catalogs | CLOSED
 | Financial Resources | CLOSED |
-| Financial Events | Diseño lógico en construcción |
-| Financial Planning | Pendiente |
+| Financial Events | CLOSED |
+| Financial Planning | CLOSED |
 | Financial Obligations | Pendiente |
 | Audit | Pendiente |
+
 
 ### Entidades definidas de Catalogs
 
@@ -2045,6 +2355,18 @@ Las entidades de Financial Events definidas para esta etapa son:
 - Financial Event
 - RecurrenceType
 - RecurrenceConfiguration
+
+### Entidades definidas de Financial Planning
+
+Las entidades persistentes del dominio Financial Planning serán:
+
+- Financial Strategy
+- Financial Strategy Item
+- Financial Plan
+- Financial Plan Item
+- Financial Plan Strategy
+- Financial Plan Resource
+- Financial Plan Item Event
 
 ---
 
@@ -4544,3 +4866,516 @@ una relación polimórfica genérica.
 Cada relación futura deberá definirse explícitamente en el dominio
 correspondiente y utilizar Foreign Keys reales cuando la relación requiera
 persistencia referencial.
+
+### 13.3.24 Cierre del Dominio Financial Events
+
+El dominio Financial Events queda cerrado después de completar y
+validar su diseño lógico, diseño físico, implementación y artefactos
+de soporte.
+
+Artefactos completados:
+
+- Diseño lógico de Income, Expense, StandAlone, FinancialEvent,
+  RecurrenceType y RecurrenceConfiguration.
+- ERD Level 1 actualizado.
+- Decisiones físicas documentadas.
+- Scripts de creación de tablas.
+- Scripts de Foreign Keys.
+- Scripts de índices.
+- Seed inicial de RecurrenceType.
+- Scripts de validación.
+- Scripts de rollback.
+- Implementación en Azure SQL Database.
+- Validación de la implementación en Azure SQL Database.
+
+La implementación del dominio fue ejecutada correctamente en Azure SQL
+Database.
+
+La validación confirmó:
+
+- Existencia de todas las tablas requeridas.
+- Existencia y activación de los cinco tipos iniciales de recurrencia.
+- Integridad de la regla de fuente única de FinancialEvent.
+- Integridad de los estados EXPECTED y CONFIRMED.
+
+El dominio Financial Events queda establecido como línea base para las
+disciplinas posteriores que dependan de sus entidades y reglas.
+
+### 13.3.25 Dominio: Financial Planning
+
+El dominio Financial Planning agrupa las entidades responsables de
+persistir las Estrategias Financieras generadas por BudgetKeep, los Planes
+Financieros adoptados por el Usuario y las relaciones necesarias para
+preservar su composición, ejecución y trazabilidad.
+
+El dominio soporta las capacidades funcionales:
+
+- FC-007 – Estrategias Financieras.
+- FC-008 – Planificación Financiera.
+
+Las entidades que conforman este dominio son:
+
+- Financial Strategy
+- Financial Strategy Item
+- Financial Plan
+- Financial Plan Item
+- Financial Plan Strategy
+- Financial Plan Resource
+- Financial Plan Item Event
+
+Financial Strategy representa una recomendación generada por BudgetKeep.
+
+Financial Plan representa exclusivamente las decisiones adoptadas por el
+Usuario.
+
+Financial Strategy no modifica Financial Reality y Financial Plan no
+modifica automáticamente Financial Reality.
+
+El avance del Financial Plan se obtiene relacionando sus acciones con los
+Financial Events correspondientes.
+
+#### 13.3.25.1 Entity: Financial Strategy
+
+##### 13.3.25.1.1 Objetivo
+
+Representar una Estrategia Financiera generada por BudgetKeep para un
+Usuario determinado.
+
+La entidad conserva la recomendación generada para que pueda ser
+consultada y utilizada posteriormente como base para la construcción de
+uno o varios Planes Financieros.
+
+##### 13.3.25.1.2 Responsabilidades
+
+La entidad Financial Strategy es responsable de:
+
+- Identificar de forma única una Estrategia Financiera.
+- Asociar la estrategia con el Usuario para quien fue generada.
+- Conservar el nombre de la estrategia.
+- Conservar el objetivo financiero de la estrategia.
+- Conservar la descripción de la recomendación.
+- Conservar la prioridad recomendada.
+- Conservar los beneficios esperados.
+- Conservar las consideraciones asociadas a la estrategia.
+- Mantener la recomendación como información histórica.
+
+Financial Strategy no representa una decisión adoptada por el Usuario.
+
+##### 13.3.25.1.3 Relaciones
+
+Financial Strategy mantiene las siguientes relaciones:
+
+- User 1:N Financial Strategy.
+- Financial Strategy 1:N Financial Strategy Item.
+- Financial Strategy N:M Financial Plan mediante Financial Plan Strategy.
+
+Una Financial Strategy pertenece obligatoriamente a un único User.
+
+Una Financial Strategy podrá ser utilizada como base para múltiples
+Financial Plan cuando corresponda.
+
+##### 13.3.25.1.4 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|----------|-------------|-------------|
+| FinancialStrategyId | Identificador único de la Estrategia Financiera. | Sí |
+| UserId | Usuario para quien fue generada la estrategia. | Sí |
+| Name | Nombre de la Estrategia Financiera. | Sí |
+| Objective | Resultado financiero que la estrategia busca alcanzar. | Sí |
+| Description | Explicación general de la estrategia propuesta. | Sí |
+| RecommendedPriority | Prioridad recomendada por BudgetKeep. | No |
+| ExpectedBenefits | Resultados esperados si el Usuario adopta la estrategia. | No |
+| Considerations | Aspectos que el Usuario debe considerar antes de adoptar la estrategia. | No |
+| CreatedAt | Fecha y hora de generación de la estrategia. | Sí |
+| CreatedBy | Usuario responsable de la operación cuando exista. | No |
+
+#### 13.3.25.2 Entity: Financial Strategy Item
+
+##### 13.3.25.2.1 Objetivo
+
+Representar una acción individual perteneciente al conjunto organizado de
+acciones de una Financial Strategy.
+
+Esta entidad es una estructura de persistencia de apoyo derivada de la
+definición de Financial Strategy como un conjunto organizado de acciones.
+
+No constituye un nuevo Domain Concept.
+
+##### 13.3.25.2.2 Responsabilidades
+
+Financial Strategy Item es responsable de:
+
+- Asociar una acción con una Financial Strategy.
+- Mantener el orden recomendado de las acciones.
+- Conservar la descripción de la acción propuesta.
+- Mantener la composición histórica de la estrategia generada.
+
+##### 13.3.25.2.3 Relaciones
+
+- Financial Strategy 1:N Financial Strategy Item.
+
+Cada Financial Strategy Item pertenece obligatoriamente a una única
+Financial Strategy.
+
+##### 13.3.25.2.4 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|----------|-------------|-------------|
+| FinancialStrategyItemId | Identificador único de la acción de la estrategia. | Sí |
+| FinancialStrategyId | Estrategia Financiera a la que pertenece la acción. | Sí |
+| SequenceNumber | Orden de ejecución recomendado dentro de la estrategia. | Sí |
+| Description | Descripción de la acción recomendada. | Sí |
+| CreatedAt | Fecha y hora de creación. | Sí |
+| CreatedBy | Usuario responsable de la operación cuando exista. | No |
+
+#### 13.3.25.3 Entity: Financial Plan
+
+##### 13.3.25.3.1 Objetivo
+
+Representar el conjunto organizado de decisiones financieras adoptadas por
+el Usuario durante un periodo determinado.
+
+Financial Plan constituye la persistencia de las decisiones del Usuario y
+sirve como referencia para la ejecución y seguimiento de dichas decisiones.
+
+##### 13.3.25.3.2 Responsabilidades
+
+Financial Plan es responsable de:
+
+- Identificar de forma única el Plan Financiero.
+- Asociar el plan con su propietario.
+- Conservar el nombre del plan.
+- Conservar el objetivo financiero.
+- Conservar la fecha de inicio.
+- Conservar la fecha de revisión.
+- Mantener el estado del ciclo de vida.
+- Conservar las notas registradas por el Usuario.
+- Mantener el historial de los planes finalizados.
+
+Financial Plan no representa una recomendación generada por BudgetKeep.
+
+Representa exclusivamente decisiones adoptadas por el Usuario.
+
+##### 13.3.25.3.3 Relaciones
+
+Financial Plan mantiene las siguientes relaciones:
+
+- User 1:N Financial Plan.
+- Financial Plan 1:N Financial Plan Item.
+- Financial Plan N:M Financial Strategy mediante Financial Plan Strategy.
+- Financial Plan N:M Financial Resource mediante Financial Plan Resource.
+
+Financial Plan Item mantiene además una relación N:M con Financial Event
+mediante Financial Plan Item Event.
+
+##### 13.3.25.3.4 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|----------|-------------|-------------|
+| FinancialPlanId | Identificador único del Plan Financiero. | Sí |
+| UserId | Usuario propietario del Plan Financiero. | Sí |
+| Name | Nombre utilizado para identificar el Plan. | Sí |
+| Objective | Resultado financiero que el Usuario desea alcanzar. | Sí |
+| StartDate | Fecha a partir de la cual el Plan comienza a ejecutarse. | Sí |
+| ReviewDate | Fecha prevista para revisar o actualizar el Plan. | No |
+| LifecycleStatus | Estado actual del ciclo de vida del Plan. | Sí |
+| UserNotes | Observaciones, decisiones o recordatorios registrados por el Usuario. | No |
+| CreatedAt | Fecha y hora de creación. | Sí |
+| CreatedBy | Usuario responsable de la creación. | No |
+| UpdatedAt | Fecha y hora de la última modificación. | No |
+| UpdatedBy | Usuario responsable de la última modificación. | No |
+
+#### 13.3.25.4 Entity: Financial Plan Item
+
+##### 13.3.25.4.1 Objetivo
+
+Representar una acción individual perteneciente al conjunto organizado de
+decisiones de un Financial Plan.
+
+Esta entidad es una estructura de persistencia de apoyo derivada de la
+responsabilidad del Financial Plan de permitir al Usuario definir el orden
+en que ejecutará sus acciones.
+
+No constituye un nuevo Domain Concept.
+
+##### 13.3.25.4.2 Responsabilidades
+
+Financial Plan Item es responsable de:
+
+- Asociar una acción con un Financial Plan.
+- Mantener el orden definido por el Usuario.
+- Conservar la descripción de la acción.
+- Servir como unidad de seguimiento del avance del Plan mediante los
+  Financial Events relacionados.
+
+##### 13.3.25.4.3 Relaciones
+
+- Financial Plan 1:N Financial Plan Item.
+- Financial Plan Item N:M Financial Event mediante Financial Plan Item Event.
+
+##### 13.3.25.4.4 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|----------|-------------|-------------|
+| FinancialPlanItemId | Identificador único de la acción del Plan. | Sí |
+| FinancialPlanId | Plan Financiero al que pertenece la acción. | Sí |
+| SequenceNumber | Orden de ejecución definido por el Usuario. | Sí |
+| Description | Descripción de la acción financiera. | Sí |
+| CreatedAt | Fecha y hora de creación. | Sí |
+| CreatedBy | Usuario responsable de la creación. | No |
+| UpdatedAt | Fecha y hora de la última modificación. | No |
+| UpdatedBy | Usuario responsable de la última modificación. | No |
+| DeletedAt | Fecha y hora de eliminación lógica. | No |
+| DeletedBy | Usuario responsable de la eliminación lógica. | No |
+
+#### 13.3.25.5 Entity: Financial Plan Strategy
+
+##### 13.3.25.5.1 Objetivo
+
+Representar la relación entre un Financial Plan y las Financial Strategies
+que fueron utilizadas como base para su construcción.
+
+La entidad permite conservar que un Plan pudo construirse a partir de una
+o varias Estrategias Financieras.
+
+##### 13.3.25.5.2 Relaciones
+
+- Financial Plan N:M Financial Strategy.
+
+Cada registro representa una única asociación entre un Financial Plan y
+una Financial Strategy.
+
+##### 13.3.25.5.3 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|----------|-------------|-------------|
+| FinancialPlanId | Plan Financiero relacionado. | Sí |
+| FinancialStrategyId | Estrategia Financiera utilizada como base. | Sí |
+| CreatedAt | Fecha y hora de creación de la relación. | Sí |
+| CreatedBy | Usuario responsable de la asociación. | No |
+
+#### 13.3.25.6 Entity: Financial Plan Resource
+
+##### 13.3.25.6.1 Objetivo
+
+Representar los Financial Resources seleccionados por el Usuario para la
+ejecución de un Financial Plan.
+
+##### 13.3.25.6.2 Relaciones
+
+- Financial Plan N:M Financial Resource.
+
+Cada registro representa una única selección de un Financial Resource
+dentro de un Financial Plan.
+
+##### 13.3.25.6.3 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|----------|-------------|-------------|
+| FinancialPlanId | Plan Financiero relacionado. | Sí |
+| FinancialResourceId | Recurso Financiero seleccionado para ejecutar el Plan. | Sí |
+| CreatedAt | Fecha y hora de selección. | Sí |
+| CreatedBy | Usuario responsable de la selección. | No |
+
+#### 13.3.25.7 Entity: Financial Plan Item Event
+
+##### 13.3.25.7.1 Objetivo
+
+Representar la relación entre una acción de un Financial Plan y los
+Financial Events utilizados para evaluar su ejecución.
+
+Esta entidad permite determinar el avance del Plan a partir de eventos
+financieros registrados.
+
+##### 13.3.25.7.2 Relaciones
+
+- Financial Plan Item N:M Financial Event.
+
+Un Financial Plan Item podrá relacionarse con múltiples Financial Events.
+
+Un Financial Event podrá participar en la evaluación de múltiples
+Financial Plan Items cuando corresponda.
+
+##### 13.3.25.7.3 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|----------|-------------|-------------|
+| FinancialPlanItemId | Acción del Plan relacionada. | Sí |
+| FinancialEventId | Evento Financiero utilizado para evaluar la acción. | Sí |
+| CreatedAt | Fecha y hora de creación de la relación. | Sí |
+| CreatedBy | Usuario responsable de la asociación. | No |
+
+#### 13.3.25.8 Relaciones del Dominio Financial Planning
+
+Las relaciones del dominio Financial Planning se definen de la siguiente
+manera:
+
+##### User
+
+- User 1:N Financial Strategy.
+- User 1:N Financial Plan.
+
+##### Financial Strategy
+
+- Financial Strategy 1:N Financial Strategy Item.
+- Financial Strategy N:M Financial Plan mediante Financial Plan Strategy.
+
+##### Financial Plan
+
+- Financial Plan 1:N Financial Plan Item.
+- Financial Plan N:M Financial Strategy mediante Financial Plan Strategy.
+- Financial Plan N:M Financial Resource mediante Financial Plan Resource.
+
+##### Financial Plan Item
+
+- Financial Plan Item N:M Financial Event mediante Financial Plan Item Event.
+
+##### Financial Resource
+
+- Financial Resource N:M Financial Plan mediante Financial Plan Resource.
+
+##### Financial Event
+
+- Financial Event N:M Financial Plan Item mediante Financial Plan Item Event.
+
+#### 13.3.25.9 Reglas de Integridad del Dominio
+
+Las siguientes reglas deberán preservarse durante el diseño lógico,
+el diseño físico y la implementación del dominio Financial Planning.
+
+##### Financial Strategy
+
+1. Toda Financial Strategy deberá pertenecer obligatoriamente a un User.
+
+2. Toda Financial Strategy deberá conservar su información como una
+   recomendación generada por BudgetKeep.
+
+3. Una Financial Strategy no deberá modificar directamente Financial Reality.
+
+4. Una Financial Strategy no deberá representar por sí misma una decisión
+   adoptada por el Usuario.
+
+5. Una Financial Strategy podrá utilizarse como base para uno o varios
+   Financial Plan cuando corresponda.
+
+##### Financial Strategy Item
+
+6. Todo Financial Strategy Item deberá pertenecer a una única
+   Financial Strategy.
+
+7. Una Financial Strategy podrá tener múltiples Financial Strategy Items.
+
+8. El SequenceNumber deberá identificar el orden de la acción dentro de su
+   Financial Strategy.
+
+##### Financial Plan
+
+9. Todo Financial Plan deberá pertenecer obligatoriamente a un User.
+
+10. Todo Financial Plan deberá tener un LifecycleStatus válido.
+
+11. LifecycleStatus deberá admitir únicamente:
+    - ACTIVE
+    - FINALIZED
+
+12. Un Financial Plan FINALIZED deberá conservarse para consultas históricas.
+
+13. Un Financial Plan no deberá modificar automáticamente Financial Reality.
+
+14. La modificación de un Financial Plan deberá afectar únicamente la
+    planificación del Usuario.
+
+##### Financial Plan Item
+
+15. Todo Financial Plan Item deberá pertenecer a un único Financial Plan.
+
+16. Una Financial Plan podrá tener múltiples Financial Plan Items.
+
+17. El SequenceNumber deberá identificar el orden de la acción dentro de
+    su Financial Plan.
+
+##### Financial Plan Strategy
+
+18. Una misma combinación de FinancialPlanId y FinancialStrategyId no podrá
+    registrarse más de una vez.
+
+19. Una Financial Strategy asociada a un Financial Plan deberá pertenecer
+    al mismo User propietario del Plan.
+
+##### Financial Plan Resource
+
+20. Una misma combinación de FinancialPlanId y FinancialResourceId no podrá
+    registrarse más de una vez.
+
+21. Un Financial Resource asociado a un Financial Plan deberá pertenecer
+    al mismo User propietario del Plan.
+
+##### Financial Plan Item Event
+
+22. Una misma combinación de FinancialPlanItemId y FinancialEventId no podrá
+    registrarse más de una vez.
+
+23. Un Financial Event relacionado con un Financial Plan Item deberá
+    pertenecer al mismo User propietario del Financial Plan.
+
+24. Financial Plan Item Event no deberá modificar ni duplicar información
+    de Financial Event.
+
+25. El avance del Financial Plan deberá obtenerse a partir de los
+    Financial Events relacionados y no mediante un estado persistente
+    duplicado en Financial Plan.
+
+##### Estrategia y decisión del Usuario
+
+26. La asociación entre Financial Strategy y Financial Plan representa
+    trazabilidad de origen y no implica que el Usuario haya adoptado
+    automáticamente toda la estrategia.
+
+27. Las decisiones finalmente adoptadas por el Usuario deberán quedar
+    representadas dentro de Financial Plan y sus Financial Plan Items.
+
+### 13.3.25.10 Cierre del Dominio Financial Planning
+
+El dominio Financial Planning queda cerrado después de completar y
+validar su diseño lógico, diseño físico, implementación y artefactos
+de soporte.
+
+Artefactos completados:
+
+- Diseño lógico de Financial Strategy, Financial Strategy Item,
+  Financial Plan, Financial Plan Item, Financial Plan Strategy,
+  Financial Plan Resource y Financial Plan Item Event.
+- ERD Level 1 actualizado.
+- Decisiones físicas documentadas.
+- Scripts de creación de tablas.
+- Scripts de Foreign Keys.
+- Scripts de índices.
+- Scripts de validación.
+- Scripts de rollback.
+- Implementación en Azure SQL Database.
+- Validación de la implementación en Azure SQL Database.
+
+No se requirió Seed para Financial Planning.
+
+La implementación del dominio fue ejecutada correctamente en
+Azure SQL Database.
+
+La validación confirmó:
+
+- Existencia de todas las tablas requeridas.
+- Integridad de las Primary Keys.
+- Integridad de las Foreign Keys.
+- Integridad de los Check Constraints.
+- Integridad de los índices requeridos.
+- Integridad de las reglas de SequenceNumber.
+- Integridad de LifecycleStatus.
+- Integridad de las reglas de fecha de Financial Plan.
+- Integridad de las relaciones entre Financial Plan y Financial Strategy.
+- Integridad de las relaciones entre Financial Plan y Financial Resource.
+- Integridad de las relaciones entre Financial Plan Item y Financial Event.
+- Ausencia de registros huérfanos.
+- Consistencia de propiedad por User.
+- Ausencia de duplicados en las relaciones asociativas.
+
+El dominio Financial Planning queda establecido como línea base para
+las disciplinas posteriores que dependan de sus entidades y reglas.
