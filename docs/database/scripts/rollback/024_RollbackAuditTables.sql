@@ -1,0 +1,16 @@
+/*
+BudgetKeep
+DB-001 | Audit
+ROLLBACK | Tables
+*/
+SET XACT_ABORT ON;
+SET NOCOUNT ON;
+
+BEGIN TRANSACTION;
+
+IF OBJECT_ID('dbo.AuditLog', 'U') IS NOT NULL
+BEGIN
+    DROP TABLE dbo.AuditLog;
+END;
+
+COMMIT TRANSACTION;

@@ -2967,7 +2967,7 @@ Los dominios funcionales definidos para BudgetKeep son:
 | Financial Events | CLOSED |
 | Financial Planning | CLOSED |
 | Financial Obligations | CLOSED |
-| Audit | Pendiente |
+| Audit | CLOSED |
 
 
 ### Entidades definidas de Catalogs
@@ -3023,6 +3023,12 @@ Las entidades de soporte del dominio serán:
 - Debt Type
 - Related Entity Type
 - Financial Obligation Recurrence Configuration
+
+### Entidades definidas de Audit
+
+Las entidades persistentes del dominio Audit serán:
+
+- Audit Log
 
 ---
 
@@ -6709,3 +6715,121 @@ No existirá una relación directa Financial Obligation → Related Entity.
 
 66. No deberá permitirse que un Payment Resource se relacione con un
     Payment o Financial Resource perteneciente a otro User.
+
+---
+
+### 13.3.27 Dominio: Audit
+
+El dominio Audit agrupa las entidades responsables de conservar la
+trazabilidad histórica de acciones relevantes realizadas sobre la
+información persistente y sobre eventos relevantes de seguridad de
+BudgetKeep.
+
+El dominio Audit no sustituye los atributos de auditoría operativa
+CreatedAt, CreatedBy, UpdatedAt, UpdatedBy, DeletedAt y DeletedBy
+existentes en las entidades de negocio.
+
+Las entidades que conforman este dominio son:
+
+- Audit Log
+
+#### 13.3.27.1 Entity: Audit Log
+
+##### 13.3.27.1.1 Objetivo
+
+Conservar una evidencia histórica de las acciones relevantes realizadas
+sobre información persistente y de eventos relevantes de seguridad.
+
+##### 13.3.27.1.2 Responsabilidades
+
+Audit Log deberá:
+
+- identificar al Usuario responsable de la acción cuando corresponda;
+- identificar el tipo de acción registrada;
+- identificar la entidad afectada;
+- identificar el registro afectado;
+- conservar la fecha y hora de ocurrencia;
+- conservar los valores anteriores y nuevos cuando corresponda;
+- permitir correlacionar eventos pertenecientes a una misma operación;
+- conservar metadatos adicionales necesarios para trazabilidad.
+
+Audit Log no deberá modificar ni sustituir la información de las entidades
+auditadas.
+
+##### 13.3.27.1.3 Relaciones
+
+- User 1:N Audit Log.
+
+Audit Log no tendrá relaciones Foreign Key con las entidades de negocio
+auditadas.
+
+La identificación de la entidad y del registro auditado se realizará
+mediante EntityName y EntityId.
+
+##### 13.3.27.1.4 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|---|---|---|
+| AuditLogId | Identificador único del registro de auditoría. | Sí |
+| UserId | Usuario responsable de la acción cuando corresponda. | No |
+| ActionType | Tipo de acción registrada. | Sí |
+| EntityName | Nombre de la entidad afectada. | Sí |
+| EntityId | Identificador del registro afectado. | Sí |
+| OccurredAt | Fecha y hora de ocurrencia. | Sí |
+| CorrelationId | Identificador para correlacionar eventos de una misma operación. | No |
+| OldValues | Valores anteriores cuando corresponda. | No |
+| NewValues | Valores nuevos cuando corresponda. | No |
+| Metadata | Información adicional de trazabilidad. | No |
+
+##### 13.3.27.1.5 Reglas de Integridad
+
+1. Todo Audit Log deberá identificar la acción registrada.
+
+2. Todo Audit Log deberá identificar la entidad y el registro afectados.
+
+3. UserId podrá ser NULL cuando la acción no sea atribuible a un Usuario.
+
+4. Audit Log no deberá modificarse ni eliminarse como parte de la operación
+   funcional normal.
+
+5. OldValues y NewValues podrán ser NULL cuando la acción registrada no
+   requiera conservar dichos valores.
+
+6. Audit Log no deberá modificar los datos históricos de las entidades
+   auditadas.
+
+7. Los eventos relevantes de autenticación y seguridad podrán registrarse
+   mediante Audit Log.
+
+8. Audit Log no deberá utilizarse como sustituto de CreatedAt, CreatedBy,
+   UpdatedAt, UpdatedBy, DeletedAt ni DeletedBy.
+
+#### 13.3.27.2 Diseño Físico del Dominio Audit
+
+##### 13.3.27.2.1 Audit Log
+
+Audit Log se implementará físicamente en el esquema dbo.
+
+Los atributos tendrán las siguientes definiciones:
+
+| Atributo | Tipo de dato | Null |
+|---|---|---|
+| AuditLogId | BIGINT IDENTITY(1,1) | No |
+| UserId | BIGINT | Sí |
+| ActionType | VARCHAR(30) | No |
+| EntityName | VARCHAR(128) | No |
+| EntityId | VARCHAR(100) | No |
+| OccurredAt | DATETIME2(3) | No |
+| CorrelationId | VARCHAR(100) | Sí |
+| OldValues | NVARCHAR(MAX) | Sí |
+| NewValues | NVARCHAR(MAX) | Sí |
+| Metadata | NVARCHAR(MAX) | Sí |
+
+AuditLogId será la Primary Key.
+
+UserId tendrá una Foreign Key hacia User.UserId.
+
+No se crearán Foreign Keys desde AuditLog hacia las entidades auditadas.
+
+Audit Log será una estructura de historial y sus registros deberán tratarse
+como append-only desde la perspectiva de la aplicación.

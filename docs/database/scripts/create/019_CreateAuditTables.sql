@@ -1,0 +1,29 @@
+/*
+BudgetKeep
+DB-001 | Audit
+CREATE | Tables
+*/
+SET XACT_ABORT ON;
+SET NOCOUNT ON;
+
+BEGIN TRANSACTION;
+
+CREATE TABLE dbo.AuditLog
+(
+    AuditLogId BIGINT IDENTITY(1,1) NOT NULL,
+    UserId BIGINT NULL,
+    ActionType VARCHAR(30) NOT NULL,
+    EntityName VARCHAR(128) NOT NULL,
+    EntityId VARCHAR(100) NOT NULL,
+    OccurredAt DATETIME2(3) NOT NULL
+        CONSTRAINT DF_AuditLog_OccurredAt DEFAULT SYSUTCDATETIME(),
+    CorrelationId VARCHAR(100) NULL,
+    OldValues NVARCHAR(MAX) NULL,
+    NewValues NVARCHAR(MAX) NULL,
+    Metadata NVARCHAR(MAX) NULL,
+
+    CONSTRAINT PK_AuditLog
+        PRIMARY KEY (AuditLogId)
+);
+
+COMMIT TRANSACTION;

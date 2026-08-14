@@ -261,3 +261,59 @@ preferences or market rates.
 ## Source
 
 User clarification during Database Design — Financial Obligations domain.
+
+# BK-DEC-008 — Audit History Structure
+
+**Status:** Approved
+
+**Date:** 2026-08-13
+
+## Decision
+
+BudgetKeep will preserve relevant historical and security audit events in a
+centralized `AuditLog` structure.
+
+`AuditLog` will identify the affected entity and record through
+`EntityName` and `EntityId`.
+
+`AuditLog` will maintain the actor, action type, occurrence timestamp,
+correlation identifier, and optional previous/new values and metadata.
+
+`AuditLog` will have a Foreign Key only to `User`.
+
+`AuditLog` will not have Foreign Keys to the business entities being
+audited.
+
+`AuditLog` will not replace the operational audit attributes already
+present in the business entities, such as `CreatedAt`, `CreatedBy`,
+`UpdatedAt`, `UpdatedBy`, `DeletedAt`, and `DeletedBy`.
+
+From the application perspective, `AuditLog` records will be append-only.
+
+## Rationale
+
+A centralized audit structure provides historical traceability across the
+solution without creating structural coupling between Audit and every
+business entity.
+
+Using `EntityName` and `EntityId` allows the audit mechanism to identify
+different types of audited records without introducing polymorphic Foreign
+Key relationships into the business data model.
+
+Separating AuditLog from the operational audit attributes preserves the
+distinction between the current audit state of a record and its historical
+audit trail.
+
+## Impact
+
+The Audit domain introduces:
+
+- `AuditLog`;
+- a Foreign Key from `AuditLog.UserId` to `User.UserId`;
+- indexes supporting queries by User, entity, action, occurrence time and
+  correlation;
+- no Foreign Keys from `AuditLog` to audited business entities.
+
+## Source
+
+Database Design decision for the Audit domain.

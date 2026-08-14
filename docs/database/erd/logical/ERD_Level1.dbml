@@ -589,6 +589,23 @@ Table RelatedEntity {
   DeletedBy bigint
 }
 
+// ============================================================
+// AUDIT
+// ============================================================
+
+Table AuditLog {
+  AuditLogId bigint [pk, increment]
+  UserId bigint
+  ActionType varchar(30) [not null]
+  EntityName varchar(128) [not null]
+  EntityId varchar(100) [not null]
+  OccurredAt datetime2(3) [not null]
+  CorrelationId varchar(100)
+  OldValues nvarchar(max)
+  NewValues nvarchar(max)
+  Metadata nvarchar(max)
+}
+
 // ==========================================================
 // Relaciones funcionales
 // ==========================================================
@@ -677,6 +694,16 @@ Ref: RecurrenceConfiguration.RecurrenceTypeId > RecurrenceType.RecurrenceTypeId
 // to FinancialObligation.
 // When a FinancialObligation belongs to a Debt, the Debt may identify the
 // RelatedEntity associated with that financial relationship.
+//
+// AuditLog records historical audit and security events.
+//
+// AuditLog has a direct relationship only with User.
+//
+// AuditLog does NOT have Foreign Keys to audited business entities.
+// EntityName + EntityId provide technical identification of the
+// audited entity and record.
+//
+// AuditLog is append-only from the application perspective.
 //
 // ==========================================================
 // Relaciones técnicas de auditoría
@@ -771,6 +798,8 @@ Ref: RelatedEntity.CreatedBy > User.UserId
 Ref: RelatedEntity.UpdatedBy > User.UserId
 Ref: RelatedEntity.DeletedBy > User.UserId
 
+Ref: AuditLog.UserId > User.UserId
+
 // ==========================================================
 // Financial Planning
 // ==========================================================
@@ -836,4 +865,4 @@ Ref: FinancialResource.FinancialResourceId < PaymentResource.FinancialResourceId
 Ref: User.UserId < RelatedEntity.UserId
 Ref: RelatedEntityType.RelatedEntityTypeId < RelatedEntity.RelatedEntityTypeId
 Ref: RelatedEntity.RelatedEntityId < Debt.RelatedEntityId
-Ref: RelatedEntity.RelatedEntityId < FinancialEvent.RelatedEntityId
+

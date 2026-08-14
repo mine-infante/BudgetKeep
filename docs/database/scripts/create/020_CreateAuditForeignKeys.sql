@@ -1,0 +1,16 @@
+/*
+BudgetKeep
+DB-001 | Audit
+CREATE | Foreign Keys
+*/
+SET XACT_ABORT ON;
+SET NOCOUNT ON;
+
+BEGIN TRANSACTION;
+
+ALTER TABLE dbo.AuditLog
+ADD CONSTRAINT FK_AuditLog_User
+    FOREIGN KEY (UserId)
+    REFERENCES dbo.[User](UserId);
+
+COMMIT TRANSACTION;
