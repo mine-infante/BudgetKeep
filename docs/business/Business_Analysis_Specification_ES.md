@@ -457,11 +457,15 @@ Un Pago nunca se asumirá automáticamente.
 
 ### BR-014
 
-Un Pago podrá atender total o parcialmente una Obligación Financiera.
+Un Pago deberá atender total o parcialmente una única Obligación Financiera.
 
 ### BR-015
 
-Un mismo Pago podrá distribuirse entre múltiples Obligaciones Financieras.
+Una Obligación Financiera podrá recibir múltiples Pagos.
+
+Si una misma operación o disposición de recursos está destinada a atender
+múltiples Obligaciones Financieras, deberá registrarse un Pago independiente
+para cada Obligación Financiera atendida.
 
 ### BR-016
 
@@ -940,7 +944,7 @@ El sistema deberá registrar Pagos.
 
 ### FR-023
 
-El sistema deberá permitir distribuir un Pago entre múltiples Obligaciones Financieras.
+El sistema deberá permitir registrar cada Pago asociado a una única Obligación Financiera.
 
 ### FR-024
 

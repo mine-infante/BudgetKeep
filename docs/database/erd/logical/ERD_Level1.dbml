@@ -5,7 +5,7 @@
 //
 // Domains:
 // Identity & Security + Catalogs + Financial Resources
-// + Financial Events + Financial Planning
+// + Financial Events + Financial Planning + Financial Obligations
 // ==========================================================
 
 // ==========================================================
@@ -310,6 +310,8 @@ Table FinancialEvent {
   IncomeId bigint
   ExpenseId bigint
   StandAloneId bigint
+  CurrencyId bigint [not null]
+  RelatedEntityId bigint
   ExpectedDate date [not null]
   ActualDate date
   ExpectedAmount decimal
@@ -429,6 +431,164 @@ Table FinancialPlanItemEvent {
   }
 }
 
+// ============================================================
+// FINANCIAL OBLIGATIONS
+// ============================================================
+
+Table FinancialObligationType {
+  FinancialObligationTypeId bigint [pk, increment]
+  OwnerUserId bigint
+  Code varchar(50) [not null]
+  Name nvarchar(150) [not null]
+  Description nvarchar(500)
+  IsActive bit [not null]
+  CreatedAt datetime2(3) [not null]
+  CreatedBy bigint
+  UpdatedAt datetime2(3)
+  UpdatedBy bigint
+  DeletedAt datetime2(3)
+  DeletedBy bigint
+}
+
+Table DebtType {
+  DebtTypeId bigint [pk, increment]
+  OwnerUserId bigint
+  Code varchar(50) [not null]
+  Name nvarchar(150) [not null]
+  Description nvarchar(500)
+  IsActive bit [not null]
+  CreatedAt datetime2(3) [not null]
+  CreatedBy bigint
+  UpdatedAt datetime2(3)
+  UpdatedBy bigint
+  DeletedAt datetime2(3)
+  DeletedBy bigint
+}
+
+Table FinancialPriority {
+  FinancialPriorityId bigint [pk, increment]
+  UserId bigint [not null]
+  Name nvarchar(150) [not null]
+  Level int [not null]
+  Description nvarchar(500)
+  LifecycleStatus varchar(20) [not null]
+  CreatedAt datetime2(3) [not null]
+  CreatedBy bigint
+  UpdatedAt datetime2(3)
+  UpdatedBy bigint
+}
+
+Table Debt {
+  DebtId bigint [pk, increment]
+  UserId bigint [not null]
+  Name nvarchar(150) [not null]
+  DebtTypeId bigint [not null]
+  RelatedEntityId bigint
+  InitialAmount decimal(19,4)
+  OutstandingBalance decimal(19,4) [not null]
+  CurrencyId bigint [not null]
+  InterestRate decimal(9,6)
+  LifecycleStatus varchar(20) [not null]
+  Notes nvarchar(500)
+  CreatedAt datetime2(3) [not null]
+  CreatedBy bigint
+  UpdatedAt datetime2(3)
+  UpdatedBy bigint
+  DeletedAt datetime2(3)
+  DeletedBy bigint
+}
+
+Table FinancialObligation {
+  FinancialObligationId bigint [pk, increment]
+  UserId bigint [not null]
+  Name nvarchar(150) [not null]
+  FinancialObligationTypeId bigint [not null]
+  DebtId bigint
+  Amount decimal(19,4) [not null]
+  CurrencyId bigint [not null]
+  FinancialPriorityId bigint
+  DueDate date
+  LifecycleStatus varchar(20) [not null]
+  CreatedAt datetime2(3) [not null]
+  CreatedBy bigint
+  UpdatedAt datetime2(3)
+  UpdatedBy bigint
+  DeletedAt datetime2(3)
+  DeletedBy bigint
+}
+
+Table FinancialObligationRecurrenceConfiguration {
+  FinancialObligationRecurrenceConfigurationId bigint [pk, increment]
+  FinancialObligationId bigint [not null]
+  RecurrenceTypeId bigint [not null]
+  StartDate date [not null]
+  EndDate date
+  DayOfMonth int
+  DayOfWeek int
+  AnchorDate date
+  IsActive bit [not null]
+  CreatedAt datetime2(3) [not null]
+  CreatedBy bigint
+  UpdatedAt datetime2(3)
+  UpdatedBy bigint
+  DeletedAt datetime2(3)
+  DeletedBy bigint
+}
+
+Table Payment {
+  PaymentId bigint [pk, increment]
+  UserId bigint [not null]
+  FinancialObligationId bigint [not null]
+  FinancialEventId bigint [not null, unique]
+  CreatedAt datetime2(3) [not null]
+  CreatedBy bigint
+  UpdatedAt datetime2(3)
+  UpdatedBy bigint
+  DeletedAt datetime2(3)
+  DeletedBy bigint
+}
+
+Table PaymentResource {
+  PaymentResourceId bigint [pk, increment]
+  PaymentId bigint [not null]
+  FinancialResourceId bigint [not null]
+  AmountUsed decimal(19,4) [not null]
+  ExchangeRate decimal(19,8) [not null]
+  AppliedAmount decimal(19,4) [not null]
+  CreatedAt datetime2(3) [not null]
+  CreatedBy bigint
+}
+
+Table RelatedEntityType {
+  RelatedEntityTypeId bigint [pk, increment]
+  OwnerUserId bigint
+  Code varchar(50) [not null]
+  Name nvarchar(150) [not null]
+  Description nvarchar(500)
+  IsActive bit [not null]
+  CreatedAt datetime2(3) [not null]
+  CreatedBy bigint
+  UpdatedAt datetime2(3)
+  UpdatedBy bigint
+  DeletedAt datetime2(3)
+  DeletedBy bigint
+}
+
+Table RelatedEntity {
+  RelatedEntityId bigint [pk, increment]
+  UserId bigint [not null]
+  Name nvarchar(150) [not null]
+  RelatedEntityTypeId bigint [not null]
+  LifecycleStatus varchar(20) [not null]
+  Notes nvarchar(500)
+  CreatedAt datetime2(3) [not null]
+  CreatedBy bigint
+  UpdatedAt datetime2(3)
+  UpdatedBy bigint
+  DeletedAt datetime2(3)
+  DeletedBy bigint
+}
+
 // ==========================================================
 // Relaciones funcionales
 // ==========================================================
@@ -473,6 +633,8 @@ Ref: FinancialEvent.UserId > User.UserId
 Ref: FinancialEvent.IncomeId > Income.IncomeId
 Ref: FinancialEvent.ExpenseId > Expense.ExpenseId
 Ref: FinancialEvent.StandAloneId > StandAlone.StandAloneId
+Ref: FinancialEvent.CurrencyId > Currency.CurrencyId
+Ref: FinancialEvent.RelatedEntityId > RelatedEntity.RelatedEntityId
 
 // Financial Events — recurrence
 Ref: RecurrenceConfiguration.IncomeId > Income.IncomeId
@@ -500,6 +662,21 @@ Ref: RecurrenceConfiguration.RecurrenceTypeId > RecurrenceType.RecurrenceTypeId
 //
 // FinancialEvent.Expected* represents the expected state.
 // FinancialEvent.Actual* represents the user-confirmed reality.
+//
+// FinancialEvent.RelatedEntityId is optional.
+// When populated, RelatedEntity belongs to the same User as FinancialEvent.
+//
+// Payment attends exactly one FinancialObligation.
+// A FinancialObligation may receive multiple Payments.
+// PaymentObligation does NOT exist.
+//
+// PaymentResource represents the N:M relationship between Payment and
+// FinancialResource and preserves AmountUsed, ExchangeRate and AppliedAmount.
+//
+// RelatedEntity is optional for FinancialEvent and is not directly related
+// to FinancialObligation.
+// When a FinancialObligation belongs to a Debt, the Debt may identify the
+// RelatedEntity associated with that financial relationship.
 //
 // ==========================================================
 // Relaciones técnicas de auditoría
@@ -584,6 +761,16 @@ Ref: RecurrenceConfiguration.CreatedBy > User.UserId
 Ref: RecurrenceConfiguration.UpdatedBy > User.UserId
 Ref: RecurrenceConfiguration.DeletedBy > User.UserId
 
+Ref: PaymentResource.CreatedBy > User.UserId
+
+Ref: RelatedEntityType.CreatedBy > User.UserId
+Ref: RelatedEntityType.UpdatedBy > User.UserId
+Ref: RelatedEntityType.DeletedBy > User.UserId
+
+Ref: RelatedEntity.CreatedBy > User.UserId
+Ref: RelatedEntity.UpdatedBy > User.UserId
+Ref: RelatedEntity.DeletedBy > User.UserId
+
 // ==========================================================
 // Financial Planning
 // ==========================================================
@@ -614,3 +801,39 @@ Ref: FinancialPlanResource.CreatedBy > User.UserId
 Ref: FinancialPlanItemEvent.FinancialPlanItemId > FinancialPlanItem.FinancialPlanItemId
 Ref: FinancialPlanItemEvent.FinancialEventId > FinancialEvent.FinancialEventId
 Ref: FinancialPlanItemEvent.CreatedBy > User.UserId
+
+// ============================================================
+// FINANCIAL OBLIGATIONS
+// ============================================================
+
+Ref: User.UserId < FinancialObligation.UserId
+Ref: User.UserId < Debt.UserId
+Ref: User.UserId < FinancialPriority.UserId
+Ref: User.UserId < Payment.UserId
+
+Ref: FinancialObligationType.OwnerUserId > User.UserId
+Ref: DebtType.OwnerUserId > User.UserId
+
+Ref: FinancialObligationType.FinancialObligationTypeId < FinancialObligation.FinancialObligationTypeId
+Ref: DebtType.DebtTypeId < Debt.DebtTypeId
+
+Ref: Debt.DebtId < FinancialObligation.DebtId
+
+Ref: Currency.CurrencyId < FinancialObligation.CurrencyId
+Ref: Currency.CurrencyId < Debt.CurrencyId
+
+Ref: FinancialPriority.FinancialPriorityId < FinancialObligation.FinancialPriorityId
+
+Ref: FinancialObligation.FinancialObligationId - FinancialObligationRecurrenceConfiguration.FinancialObligationId
+Ref: RecurrenceType.RecurrenceTypeId < FinancialObligationRecurrenceConfiguration.RecurrenceTypeId
+
+Ref: FinancialObligation.FinancialObligationId < Payment.FinancialObligationId
+Ref: FinancialEvent.FinancialEventId - Payment.FinancialEventId
+
+Ref: Payment.PaymentId < PaymentResource.PaymentId
+Ref: FinancialResource.FinancialResourceId < PaymentResource.FinancialResourceId
+
+Ref: User.UserId < RelatedEntity.UserId
+Ref: RelatedEntityType.RelatedEntityTypeId < RelatedEntity.RelatedEntityTypeId
+Ref: RelatedEntity.RelatedEntityId < Debt.RelatedEntityId
+Ref: RelatedEntity.RelatedEntityId < FinancialEvent.RelatedEntityId

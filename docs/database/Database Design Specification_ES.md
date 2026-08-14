@@ -1206,6 +1206,28 @@ decisión de diseño, evaluar su impacto sobre los artefactos relacionados y
 obtener la aprobación correspondiente antes de incorporarse a la
 implementación.
 
+### 6.9.22 Moneda histórica de Financial Event
+
+Financial Event deberá conservar CurrencyId como parte de la información
+histórica de la ocurrencia.
+
+CurrencyId identificará la moneda en la que se expresa el importe del
+Financial Event.
+
+La Currency histórica del Financial Event no deberá modificarse como
+consecuencia de cambios en:
+
+- la Currency de preferencia del Usuario;
+- la Base Currency del Usuario;
+- las tasas de cambio de referencia posteriores.
+
+Cuando un Financial Event se utilice como parte de un Payment, la Currency
+del Financial Event deberá corresponder a la Currency de la Financial
+Obligation atendida.
+
+El Exchange Rate utilizado para financiar el Payment no se almacenará en
+Financial Event.
+
 ## 6.10 Decisiones Físicas — Financial Events
 
 El dominio Financial Events utilizará las decisiones físicas generales
@@ -1509,6 +1531,8 @@ Cada Financial Event deberá tener exactamente una fuente:
 - `IncomeId` utilizará `BIGINT` y será `NULL`.
 - `ExpenseId` utilizará `BIGINT` y será `NULL`.
 - `StandAloneId` utilizará `BIGINT` y será `NULL`.
+- `CurrencyId` utilizará `BIGINT` y será `NOT NULL`.
+- `RelatedEntityId` utilizará `BIGINT` y será `NULL`.
 - `ExpectedDate` utilizará `DATE` y será `NOT NULL`.
 - `ActualDate` utilizará `DATE` y será `NULL`.
 - `ExpectedAmount` utilizará `DECIMAL(19,4)` y será `NULL`.
@@ -1536,6 +1560,10 @@ Cada Financial Event deberá tener exactamente una fuente:
   `FinancialEvent.ExpenseId` → `Expense.ExpenseId`.
 - `FK_FinancialEvent_StandAlone`:
   `FinancialEvent.StandAloneId` → `StandAlone.StandAloneId`.
+- `FK_FinancialEvent_Currency`:
+  `FinancialEvent.CurrencyId` → `Currency.CurrencyId`.
+- `FK_FinancialEvent_RelatedEntity`:
+  `FinancialEvent.RelatedEntityId` → `RelatedEntity.RelatedEntityId`.
 - `FK_FinancialEvent_CreatedBy`:
   `FinancialEvent.CreatedBy` → `User.UserId`.
 - `FK_FinancialEvent_UpdatedBy`:
@@ -1568,6 +1596,31 @@ OR
     AND IncomeId IS NULL
     AND ExpenseId IS NULL
 )
+
+`CK_FinancialEvent_Status` deberá garantizar:
+
+- `EXPECTED`:
+  - `ActualDate IS NULL`
+  - `ActualAmount IS NULL`
+
+- `CONFIRMED`:
+  - `ActualDate IS NOT NULL`
+  - `ActualAmount IS NOT NULL`
+
+#### 6.10.4.5 Defaults
+
+- `DF_FinancialEvent_CreatedAt` → `SYSUTCDATETIME()`.
+
+#### 6.10.4.6 Índices
+
+Se crearán:
+
+- `IX_FinancialEvent_UserId` sobre `FinancialEvent(UserId)`.
+- `IX_FinancialEvent_IncomeId` sobre `FinancialEvent(IncomeId)`.
+- `IX_FinancialEvent_ExpenseId` sobre `FinancialEvent(ExpenseId)`.
+- `IX_FinancialEvent_StandAloneId` sobre `FinancialEvent(StandAloneId)`.
+- `IX_FinancialEvent_CurrencyId` sobre `FinancialEvent(CurrencyId)`.
+- `IX_FinancialEvent_RelatedEntityId` sobre `FinancialEvent(RelatedEntityId)`.
 
 ## 6.11 Decisiones Físicas — Financial Planning
 
@@ -1877,6 +1930,592 @@ Financial Planning y deberán reutilizarse sin reinterpretación en:
 
 Cualquier modificación posterior deberá identificarse como una nueva
 decisión de diseño y seguir el proceso de gobernanza correspondiente.
+
+## 6.12 Decisiones Físicas — Financial Obligations
+
+El dominio Financial Obligations utilizará las decisiones físicas generales
+aprobadas en la presente especificación y las decisiones de auditoría e
+historial definidas en las secciones generales correspondientes.
+
+Las entidades físicas del dominio serán implementadas inicialmente en el
+esquema `dbo`.
+
+Las Foreign Keys utilizarán:
+
+- `ON DELETE NO ACTION`.
+- `ON UPDATE NO ACTION`.
+
+Los importes monetarios utilizarán `DECIMAL(19,4)`.
+
+Las fechas de negocio que representen únicamente una fecha de calendario
+utilizarán `DATE`.
+
+Los atributos de auditoría utilizarán las convenciones generales definidas
+para el modelo.
+
+### 6.12.1 Financial Obligation
+
+`FinancialObligation` se implementará como una tabla física en el esquema
+`dbo`.
+
+#### 6.12.1.1 Columnas
+
+- `FinancialObligationId` utilizará `BIGINT IDENTITY(1,1)` y será `NOT NULL`.
+- `UserId` utilizará `BIGINT` y será `NOT NULL`.
+- `Name` utilizará `NVARCHAR(150)` y será `NOT NULL`.
+- `FinancialObligationTypeId` utilizará `BIGINT` y será `NOT NULL`.
+- `DebtId` utilizará `BIGINT` y será `NULL`.
+- `Amount` utilizará `DECIMAL(19,4)` y será `NOT NULL`.
+- `CurrencyId` utilizará `BIGINT` y será `NOT NULL`.
+- `FinancialPriorityId` utilizará `BIGINT` y será `NULL`.
+- `DueDate` utilizará `DATE` y será `NULL`.
+- `LifecycleStatus` utilizará `VARCHAR(20)` y será `NOT NULL`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`.
+- `CreatedBy` utilizará `BIGINT NULL`.
+- `UpdatedAt` utilizará `DATETIME2(3) NULL`.
+- `UpdatedBy` utilizará `BIGINT NULL`.
+- `DeletedAt` utilizará `DATETIME2(3) NULL`.
+- `DeletedBy` utilizará `BIGINT NULL`.
+
+#### 6.12.1.2 Primary Key
+
+- `PK_FinancialObligation` será la Primary Key de
+  `FinancialObligation(FinancialObligationId)`.
+
+#### 6.12.1.3 Foreign Keys
+
+- `FK_FinancialObligation_User`:
+  `FinancialObligation.UserId` → `User.UserId`.
+- `FK_FinancialObligation_Type`:
+  `FinancialObligation.FinancialObligationTypeId`
+  → `FinancialObligationType.FinancialObligationTypeId`.
+- `FK_FinancialObligation_Debt`:
+  `FinancialObligation.DebtId` → `Debt.DebtId`.
+- `FK_FinancialObligation_Currency`:
+  `FinancialObligation.CurrencyId` → `Currency.CurrencyId`.
+- `FK_FinancialObligation_Priority`:
+  `FinancialObligation.FinancialPriorityId`
+  → `FinancialPriority.FinancialPriorityId`.
+- `FK_FinancialObligation_CreatedBy`:
+  `FinancialObligation.CreatedBy` → `User.UserId`.
+- `FK_FinancialObligation_UpdatedBy`:
+  `FinancialObligation.UpdatedBy` → `User.UserId`.
+- `FK_FinancialObligation_DeletedBy`:
+  `FinancialObligation.DeletedBy` → `User.UserId`.
+
+Todas utilizarán `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
+
+#### 6.12.1.4 Defaults
+
+- `DF_FinancialObligation_CreatedAt` → `SYSUTCDATETIME()`.
+
+#### 6.12.1.5 Check Constraints
+
+- `CK_FinancialObligation_Amount` deberá garantizar que `Amount >= 0`.
+
+#### 6.12.1.6 Índices
+
+Se crearán:
+
+- `IX_FinancialObligation_UserId` sobre
+  `FinancialObligation(UserId)`.
+- `IX_FinancialObligation_DebtId` sobre
+  `FinancialObligation(DebtId)`.
+- `IX_FinancialObligation_CurrencyId` sobre
+  `FinancialObligation(CurrencyId)`.
+- `IX_FinancialObligation_FinancialPriorityId` sobre
+  `FinancialObligation(FinancialPriorityId)`.
+- `IX_FinancialObligation_DueDate` sobre
+  `FinancialObligation(DueDate)`.
+- `IX_FinancialObligation_LifecycleStatus` sobre
+  `FinancialObligation(LifecycleStatus)`.
+
+#### 6.12.1.7 Reglas de Persistencia
+
+- El importe comprometido de la obligación no será reemplazado por Payments.
+- La Currency original de la obligación será histórica.
+- Una Financial Obligation podrá existir sin Debt.
+- Una Financial Obligation podrá recibir múltiples Payments.
+- El estado financiero no se almacenará como una copia independiente.
+
+### 6.12.2 Payment
+
+`Payment` se implementará como una tabla física en el esquema `dbo`.
+
+#### 6.12.2.1 Columnas
+
+- `PaymentId` utilizará `BIGINT IDENTITY(1,1)` y será `NOT NULL`.
+- `UserId` utilizará `BIGINT` y será `NOT NULL`.
+- `FinancialObligationId` utilizará `BIGINT` y será `NOT NULL`.
+- `FinancialEventId` utilizará `BIGINT` y será `NOT NULL`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`.
+- `CreatedBy` utilizará `BIGINT NULL`.
+- `UpdatedAt` utilizará `DATETIME2(3) NULL`.
+- `UpdatedBy` utilizará `BIGINT NULL`.
+- `DeletedAt` utilizará `DATETIME2(3) NULL`.
+- `DeletedBy` utilizará `BIGINT NULL`.
+
+Payment no almacenará importe, fecha ni Currency.
+
+Estos valores se obtendrán del Financial Event asociado.
+
+#### 6.12.2.2 Primary Key
+
+- `PK_Payment` será la Primary Key de `Payment(PaymentId)`.
+
+#### 6.12.2.3 Foreign Keys
+
+- `FK_Payment_User`:
+  `Payment.UserId` → `User.UserId`.
+- `FK_Payment_FinancialObligation`:
+  `Payment.FinancialObligationId`
+  → `FinancialObligation.FinancialObligationId`.
+- `FK_Payment_FinancialEvent`:
+  `Payment.FinancialEventId` → `FinancialEvent.FinancialEventId`.
+- `FK_Payment_CreatedBy`:
+  `Payment.CreatedBy` → `User.UserId`.
+- `FK_Payment_UpdatedBy`:
+  `Payment.UpdatedBy` → `User.UserId`.
+- `FK_Payment_DeletedBy`:
+  `Payment.DeletedBy` → `User.UserId`.
+
+Todas utilizarán `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
+
+#### 6.12.2.4 Defaults
+
+- `DF_Payment_CreatedAt` → `SYSUTCDATETIME()`.
+
+#### 6.12.2.5 Índices
+
+Se crearán:
+
+- `IX_Payment_UserId` sobre `Payment(UserId)`.
+- `IX_Payment_FinancialObligationId` sobre
+  `Payment(FinancialObligationId)`.
+- `UX_Payment_FinancialEventId` sobre
+  `Payment(FinancialEventId)`.
+
+`FinancialEventId` será único porque un Financial Event podrá estar asociado
+como máximo a un Payment.
+
+#### 6.12.2.6 Reglas de Persistencia
+
+- Cada Payment deberá atender exactamente una Financial Obligation.
+- Una Financial Obligation podrá recibir múltiples Payments.
+- Un Payment podrá representar un pago total o parcial.
+- Payment no será una proyección.
+- El Financial Event asociado deberá estar CONFIRMED.
+- El Financial Event asociado deberá tener `EventType = EXPENSE`.
+- No existirá `PaymentObligation`.
+- Si una operación atiende múltiples Financial Obligations, se registrará un
+  Payment independiente para cada obligación.
+
+### 6.12.3 Financial Event
+
+Financial Event ya se encuentra físicamente definido y validado dentro del
+dominio Financial Events.
+
+Financial Obligations utilizará `FinancialEvent.FinancialEventId` como
+referencia desde Payment.
+
+No se duplicarán en Payment:
+
+- ActualDate;
+- ActualAmount;
+- CurrencyId.
+
+El Payment utilizará el Financial Event confirmado como fuente de la
+realidad financiera de la operación.
+
+La Foreign Key será:
+
+- `Payment.FinancialEventId` → `FinancialEvent.FinancialEventId`.
+
+La relación será única del lado de Payment mediante un índice UNIQUE sobre
+`Payment.FinancialEventId`.
+
+### 6.12.4 Financial Resource
+
+Financial Resource ya se encuentra físicamente definido y validado dentro
+del dominio Financial Resources.
+
+Payment Resource utilizará `FinancialResource.FinancialResourceId` como
+referencia al recurso utilizado para financiar un Payment.
+
+No se modificará la estructura física de Financial Resource como parte de
+Financial Obligations.
+
+La Currency utilizada por `AmountUsed` será la Currency del
+Financial Resource relacionado.
+
+### 6.12.5 Related Entity
+
+`RelatedEntity` se implementará como una tabla física en el esquema `dbo`.
+
+#### 6.12.5.1 Columnas
+
+- `RelatedEntityId` utilizará `BIGINT IDENTITY(1,1)` y será `NOT NULL`.
+- `UserId` utilizará `BIGINT` y será `NOT NULL`.
+- `Name` utilizará `NVARCHAR(150)` y será `NOT NULL`.
+- `RelatedEntityTypeId` utilizará `BIGINT` y será `NOT NULL`.
+- `LifecycleStatus` utilizará `VARCHAR(20)` y será `NOT NULL`.
+- `Notes` utilizará `NVARCHAR(500)` y será `NULL`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`.
+- `CreatedBy` utilizará `BIGINT NULL`.
+- `UpdatedAt` utilizará `DATETIME2(3) NULL`.
+- `UpdatedBy` utilizará `BIGINT NULL`.
+- `DeletedAt` utilizará `DATETIME2(3) NULL`.
+- `DeletedBy` utilizará `BIGINT NULL`.
+
+#### 6.12.5.2 Primary Key
+
+- `PK_RelatedEntity` será la Primary Key de
+  `RelatedEntity(RelatedEntityId)`.
+
+#### 6.12.5.3 Foreign Keys
+
+- `FK_RelatedEntity_User`:
+  `RelatedEntity.UserId` → `User.UserId`.
+- `FK_RelatedEntity_Type`:
+  `RelatedEntity.RelatedEntityTypeId`
+  → `RelatedEntityType.RelatedEntityTypeId`.
+- `FK_RelatedEntity_CreatedBy`:
+  `RelatedEntity.CreatedBy` → `User.UserId`.
+- `FK_RelatedEntity_UpdatedBy`:
+  `RelatedEntity.UpdatedBy` → `User.UserId`.
+- `FK_RelatedEntity_DeletedBy`:
+  `RelatedEntity.DeletedBy` → `User.UserId`.
+
+Todas utilizarán `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
+
+#### 6.12.5.4 Defaults
+
+- `DF_RelatedEntity_CreatedAt` → `SYSUTCDATETIME()`.
+
+#### 6.12.5.5 Índices
+
+Se crearán:
+
+- `IX_RelatedEntity_UserId` sobre `RelatedEntity(UserId)`.
+- `IX_RelatedEntity_RelatedEntityTypeId` sobre
+  `RelatedEntity(RelatedEntityTypeId)`.
+
+#### 6.12.5.6 Reglas de Persistencia
+
+- Related Entity pertenecerá a un único User.
+- Related Entity podrá asociarse a múltiples Financial Events.
+- Related Entity podrá asociarse a múltiples Debts.
+- Related Entity no se asociará directamente a Payment.
+- Related Entity no se asociará directamente a Financial Obligation.
+- La eliminación funcional utilizará `DeletedAt` y `DeletedBy`.
+
+### 6.12.6 Recurrence
+
+`FinancialObligationRecurrenceConfiguration` se implementará como una tabla
+física en el esquema `dbo`.
+
+#### 6.12.6.1 Columnas
+
+- `FinancialObligationRecurrenceConfigurationId` utilizará
+  `BIGINT IDENTITY(1,1)` y será `NOT NULL`.
+- `FinancialObligationId` utilizará `BIGINT` y será `NOT NULL`.
+- `RecurrenceTypeId` utilizará `BIGINT` y será `NOT NULL`.
+- `StartDate` utilizará `DATE` y será `NOT NULL`.
+- `EndDate` utilizará `DATE` y será `NULL`.
+- `DayOfMonth` utilizará `INT` y será `NULL`.
+- `DayOfWeek` utilizará `INT` y será `NULL`.
+- `AnchorDate` utilizará `DATE` y será `NULL`.
+- `IsActive` utilizará `BIT` y será `NOT NULL`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`.
+- `CreatedBy` utilizará `BIGINT NULL`.
+- `UpdatedAt` utilizará `DATETIME2(3) NULL`.
+- `UpdatedBy` utilizará `BIGINT NULL`.
+- `DeletedAt` utilizará `DATETIME2(3) NULL`.
+- `DeletedBy` utilizará `BIGINT NULL`.
+
+#### 6.12.6.2 Primary Key
+
+- `PK_FinancialObligationRecurrenceConfiguration` será la Primary Key de
+  `FinancialObligationRecurrenceConfiguration
+  (FinancialObligationRecurrenceConfigurationId)`.
+
+#### 6.12.6.3 Foreign Keys
+
+- `FK_FinancialObligationRecurrenceConfiguration_Obligation`:
+  `FinancialObligationRecurrenceConfiguration.FinancialObligationId`
+  → `FinancialObligation.FinancialObligationId`.
+- `FK_FinancialObligationRecurrenceConfiguration_RecurrenceType`:
+  `FinancialObligationRecurrenceConfiguration.RecurrenceTypeId`
+  → `RecurrenceType.RecurrenceTypeId`.
+- `FK_FinancialObligationRecurrenceConfiguration_CreatedBy`:
+  `CreatedBy` → `User.UserId`.
+- `FK_FinancialObligationRecurrenceConfiguration_UpdatedBy`:
+  `UpdatedBy` → `User.UserId`.
+- `FK_FinancialObligationRecurrenceConfiguration_DeletedBy`:
+  `DeletedBy` → `User.UserId`.
+
+Todas utilizarán `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
+
+#### 6.12.6.4 Defaults
+
+- `DF_FinancialObligationRecurrenceConfiguration_CreatedAt`
+  → `SYSUTCDATETIME()`.
+
+#### 6.12.6.5 Check Constraints
+
+- `CK_FinancialObligationRecurrenceConfiguration_DateRange` deberá
+  garantizar que, cuando `EndDate` esté informado,
+  `EndDate >= StartDate`.
+
+#### 6.12.6.6 Índices
+
+Se crearán:
+
+- `IX_FinancialObligationRecurrenceConfiguration_FinancialObligationId`
+  sobre `FinancialObligationRecurrenceConfiguration(FinancialObligationId)`.
+- `IX_FinancialObligationRecurrenceConfiguration_RecurrenceTypeId`
+  sobre `FinancialObligationRecurrenceConfiguration(RecurrenceTypeId)`.
+
+Se creará una restricción UNIQUE sobre
+`FinancialObligationId` para garantizar como máximo una configuración
+persistente por Financial Obligation.
+
+#### 6.12.6.7 Reglas de Persistencia
+
+- Una Financial Obligation podrá tener como máximo una configuración.
+- La configuración será independiente de RecurrenceConfiguration de
+  Financial Events.
+- La modificación de la configuración no modificará obligaciones históricas.
+- Los parámetros de recurrencia se validarán de acuerdo con el
+  RecurrenceType seleccionado.
+
+### 6.12.7 Payment Resource
+
+`PaymentResource` se implementará como una tabla física en el esquema `dbo`.
+
+#### 6.12.7.1 Columnas
+
+- `PaymentResourceId` utilizará `BIGINT IDENTITY(1,1)` y será `NOT NULL`.
+- `PaymentId` utilizará `BIGINT` y será `NOT NULL`.
+- `FinancialResourceId` utilizará `BIGINT` y será `NOT NULL`.
+- `AmountUsed` utilizará `DECIMAL(19,4)` y será `NOT NULL`.
+- `ExchangeRate` utilizará `DECIMAL(19,8)` y será `NOT NULL`.
+- `AppliedAmount` utilizará `DECIMAL(19,4)` y será `NOT NULL`.
+- `CreatedAt` utilizará `DATETIME2(3)` y será `NOT NULL`.
+- `CreatedBy` utilizará `BIGINT NULL`.
+
+#### 6.12.7.2 Primary Key
+
+- `PK_PaymentResource` será la Primary Key de
+  `PaymentResource(PaymentResourceId)`.
+
+#### 6.12.7.3 Foreign Keys
+
+- `FK_PaymentResource_Payment`:
+  `PaymentResource.PaymentId` → `Payment.PaymentId`.
+- `FK_PaymentResource_FinancialResource`:
+  `PaymentResource.FinancialResourceId`
+  → `FinancialResource.FinancialResourceId`.
+- `FK_PaymentResource_CreatedBy`:
+  `PaymentResource.CreatedBy` → `User.UserId`.
+
+Todas utilizarán `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
+
+#### 6.12.7.4 Defaults
+
+- `DF_PaymentResource_CreatedAt` → `SYSUTCDATETIME()`.
+
+#### 6.12.7.5 Check Constraints
+
+- `CK_PaymentResource_AmountUsed` deberá garantizar
+  `AmountUsed > 0`.
+- `CK_PaymentResource_ExchangeRate` deberá garantizar
+  `ExchangeRate > 0`.
+- `CK_PaymentResource_AppliedAmount` deberá garantizar
+  `AppliedAmount > 0`.
+
+#### 6.12.7.6 Índices
+
+Se crearán:
+
+- `IX_PaymentResource_PaymentId` sobre
+  `PaymentResource(PaymentId)`.
+- `IX_PaymentResource_FinancialResourceId` sobre
+  `PaymentResource(FinancialResourceId)`.
+
+#### 6.12.7.7 Reglas de Persistencia
+
+- Payment Resource representa la utilización de un Financial Resource
+  dentro de un Payment.
+- Un Payment podrá tener múltiples Payment Resources.
+- Un Financial Resource podrá participar en múltiples Payments.
+- `AmountUsed` estará expresado en la Currency del Financial Resource.
+- `AppliedAmount` estará expresado en la Currency de la Financial Obligation.
+- `ExchangeRate` conservará la tasa realmente aplicada.
+- El Exchange Rate histórico no se recalculará por cambios posteriores de
+  Base Currency.
+- La suma de `AppliedAmount` de los Payment Resources de un Payment deberá
+  corresponder al importe aplicado por el Payment a la Financial Obligation.
+
+### 6.12.8 Entidades asociativas
+
+Financial Obligations no utilizará una entidad asociativa entre
+Payment y Financial Obligation.
+
+La relación N:M entre Payment y Financial Resource será implementada mediante
+Payment Resource.
+
+Payment Resource tendrá identidad propia porque conserva información
+adicional de la aplicación del recurso:
+
+- AmountUsed;
+- ExchangeRate;
+- AppliedAmount.
+
+Por lo tanto, Payment Resource utilizará una Primary Key propia
+`PaymentResourceId` y no una Primary Key compuesta.
+
+### 6.12.9 Catálogos
+
+`Financial Obligation Type`, `Debt Type` y `Related Entity Type` serán
+estructuras de soporte para valores controlados.
+
+Los tres catálogos utilizarán el mismo patrón físico:
+
+- identificador `BIGINT IDENTITY(1,1)`;
+- `OwnerUserId BIGINT NULL`;
+- `Code VARCHAR(50) NOT NULL`;
+- `Name NVARCHAR(150) NOT NULL`;
+- `Description NVARCHAR(500) NULL`;
+- `IsActive BIT NOT NULL`;
+- atributos de auditoría.
+
+`OwnerUserId = NULL` representará un valor proporcionado por el producto.
+
+`OwnerUserId` informado representará un valor definido por un Usuario.
+
+No se implementará Seed para estos catálogos en esta fase.
+
+Los catálogos deberán conservar su historial mediante eliminación lógica
+cuando aplique.
+
+La unicidad de `Code` se establecerá por ámbito de propietario mediante
+índices únicos sobre `OwnerUserId + Code`.
+
+#### 6.12.9.1 FinancialObligationType
+
+Se implementará con:
+
+- `FinancialObligationTypeId BIGINT IDENTITY(1,1) NOT NULL`.
+- `OwnerUserId BIGINT NULL`.
+- `Code VARCHAR(50) NOT NULL`.
+- `Name NVARCHAR(150) NOT NULL`.
+- `Description NVARCHAR(500) NULL`.
+- `IsActive BIT NOT NULL`.
+- `CreatedAt DATETIME2(3) NOT NULL`.
+- `CreatedBy BIGINT NULL`.
+- `UpdatedAt DATETIME2(3) NULL`.
+- `UpdatedBy BIGINT NULL`.
+- `DeletedAt DATETIME2(3) NULL`.
+- `DeletedBy BIGINT NULL`.
+
+Foreign Keys:
+
+- `OwnerUserId` → `User.UserId`.
+- `CreatedBy` → `User.UserId`.
+- `UpdatedBy` → `User.UserId`.
+- `DeletedBy` → `User.UserId`.
+
+Default:
+
+- `CreatedAt` → `SYSUTCDATETIME()`.
+
+Índices:
+
+- índice único sobre `(OwnerUserId, Code)`.
+- índice sobre `OwnerUserId`.
+
+#### 6.12.9.2 DebtType
+
+Se implementará con la misma estructura física de
+`FinancialObligationType`.
+
+Foreign Keys:
+
+- `OwnerUserId` → `User.UserId`.
+- `CreatedBy` → `User.UserId`.
+- `UpdatedBy` → `User.UserId`.
+- `DeletedBy` → `User.UserId`.
+
+Default:
+
+- `CreatedAt` → `SYSUTCDATETIME()`.
+
+Índices:
+
+- índice único sobre `(OwnerUserId, Code)`.
+- índice sobre `OwnerUserId`.
+
+#### 6.12.9.3 RelatedEntityType
+
+Se implementará con la misma estructura física de
+`FinancialObligationType`.
+
+Foreign Keys:
+
+- `OwnerUserId` → `User.UserId`.
+- `CreatedBy` → `User.UserId`.
+- `UpdatedBy` → `User.UserId`.
+- `DeletedBy` → `User.UserId`.
+
+Default:
+
+- `CreatedAt` → `SYSUTCDATETIME()`.
+
+Índices:
+
+- índice único sobre `(OwnerUserId, Code)`.
+- índice sobre `OwnerUserId`.
+
+### 6.12.10 Moneda Base del Usuario
+
+La Base Currency del Usuario es una preferencia de configuración utilizada
+para presentación y análisis.
+
+La modificación de la Base Currency no deberá modificar ninguna Currency
+histórica almacenada en Financial Event, Financial Obligation, Debt,
+Financial Resource o Payment Resource.
+
+La aplicación podrá convertir valores históricos para presentación utilizando
+las reglas y Exchange Rates de referencia correspondientes.
+
+La conversión de presentación no deberá sobrescribir los valores monetarios
+históricos.
+
+### 6.12.11 Exchange Rate de referencia
+
+BudgetKeep deberá disponer posteriormente de una estructura persistente
+para conservar Exchange Rates de referencia por fecha y par de monedas.
+
+Esta estructura tendrá como finalidad soportar:
+
+- Budget;
+- Forecast;
+- proyecciones;
+- estimaciones;
+- conversiones de presentación cuando corresponda.
+
+Los Exchange Rates de referencia no representan necesariamente el tipo de
+cambio aplicado por una entidad financiera a una operación real.
+
+El Exchange Rate realmente aplicado a un Payment Resource deberá conservarse
+directamente en Payment Resource y tendrá prioridad como información
+histórica de la operación.
+
+La estructura física de Exchange Rate de referencia será definida en el
+dominio que requiera su persistencia funcional, inicialmente Financial
+Planning / Budget, y no se implementará como parte de Financial Obligations
+en esta etapa.
 
 # 7. Convenciones de Diseño
 
@@ -2281,7 +2920,7 @@ La existencia de un Concepto del Dominio no implica necesariamente la existencia
 | DC-001 | User | Persistente | User | Entidad raíz del modelo. |
 | DC-002 | Financial Reality | Derivado | — | Se obtiene mediante la agregación de información persistente. |
 | DC-003 | Financial Obligation | Persistente | Financial Obligation | Representa compromisos financieros del usuario. |
-| DC-004 | Payment | Persistente | Payment | Registra pagos realizados o programados. |
+| DC-004 | Payment | Persistente | Payment | Representa el acto mediante el cual el Usuario atiende total o parcialmente una única Obligación Financiera. |
 | DC-005 | Financial Event | Persistente | Financial Event | Representa eventos financieros relevantes del usuario. |
 | DC-006 | Income | Persistente | Income | Registra ingresos del usuario. |
 | DC-007 | Expense | Persistente | Expense | Registra egresos del usuario. |
@@ -2327,7 +2966,7 @@ Los dominios funcionales definidos para BudgetKeep son:
 | Financial Resources | CLOSED |
 | Financial Events | CLOSED |
 | Financial Planning | CLOSED |
-| Financial Obligations | Pendiente |
+| Financial Obligations | CLOSED |
 | Audit | Pendiente |
 
 
@@ -2367,6 +3006,23 @@ Las entidades persistentes del dominio Financial Planning serán:
 - Financial Plan Strategy
 - Financial Plan Resource
 - Financial Plan Item Event
+
+### Entidades definidas de Financial Obligations
+
+Las entidades persistentes del dominio Financial Obligations serán:
+
+- Financial Obligation
+- Debt
+- Financial Priority
+- Payment
+- Related Entity
+
+Las entidades de soporte del dominio serán:
+
+- Financial Obligation Type
+- Debt Type
+- Related Entity Type
+- Financial Obligation Recurrence Configuration
 
 ---
 
@@ -4034,6 +4690,8 @@ Financial Event mantiene las siguientes relaciones:
 - Income 1:N Financial Event.
 - Expense 1:N Financial Event.
 - StandAlone 1:N Financial Event.
+- Currency 1:N Financial Event.
+- Related Entity 1:N Financial Event.
 
 Un Financial Event pertenece obligatoriamente a un único User.
 
@@ -4054,6 +4712,17 @@ informado.
 
 Cuando la fuente sea StandAlone, FinancialEvent.StandAloneId deberá estar
 informado.
+
+La relación con Related Entity será opcional.
+
+Cuando FinancialEvent.RelatedEntityId esté informado, la Related Entity
+deberá pertenecer al mismo User propietario del Financial Event.
+
+Related Entity representa la contraparte que el Usuario decide identificar
+para la ocurrencia financiera.
+
+Related Entity no representa obligatoriamente el comercio o establecimiento
+donde se realizó una compra.
 
 ##### 13.3.23.3.4 Reglas Generales
 
@@ -4095,16 +4764,35 @@ informado.
 - La modificación de Income, Expense o StandAlone no deberá modificar
   Financial Event históricos.
 
+  - Todo Financial Event confirmado deberá conservar la Currency
+  correspondiente a la ocurrencia financiera.
+- La Currency de un Financial Event forma parte de su información histórica
+  y no deberá modificarse para reflejar cambios posteriores en la Base
+  Currency del Usuario.
+- RelatedEntityId podrá ser NULL.
+- Cuando RelatedEntityId esté informado, la Related Entity deberá pertenecer
+  al mismo User propietario del Financial Event.
+- La Related Entity asociada a un Financial Event representa la contraparte
+  que el Usuario decidió identificar para esa ocurrencia.
+- La ausencia de RelatedEntityId no impedirá registrar ni confirmar un
+  Financial Event.
+- Un Financial Event generado desde Income, Expense o StandAlone podrá
+  asociarse opcionalmente a una Related Entity.
+- La modificación de la Base Currency del Usuario no deberá modificar
+  CurrencyId ni los importes históricos de Financial Event.
+
 ##### 13.3.23.3.5 Atributos
 
 | Atributo | Descripción | Obligatorio |
-|----------|-------------|-------------|
+|---|---|---|
 | FinancialEventId | Identificador único de la ocurrencia financiera. | Sí |
 | UserId | Usuario propietario del evento. | Sí |
 | EventType | Indica si la ocurrencia corresponde a Income o Expense. | Sí |
 | IncomeId | Definición de Income que originó la ocurrencia. | No |
 | ExpenseId | Definición de Expense que originó la ocurrencia. | No |
 | StandAloneId | Evento StandAlone que originó la ocurrencia. | No |
+| RelatedEntityId | Entidad Relacionada que el Usuario decide asociar a la ocurrencia. | No |
+| CurrencyId | Moneda en la que está expresado el importe de la ocurrencia financiera. | Sí |
 | ExpectedDate | Fecha esperada calculada o registrada para la ocurrencia. | Sí |
 | ActualDate | Fecha real informada por el Usuario al confirmar la ocurrencia. | No |
 | ExpectedAmount | Importe esperado o de referencia para la ocurrencia. | No |
@@ -4554,105 +5242,105 @@ físico y la implementación del dominio Financial Events.
 
 ##### RecurrenceConfiguration
 
-24. Toda RecurrenceConfiguration deberá utilizar un RecurrenceType válido.
+27. Toda RecurrenceConfiguration deberá utilizar un RecurrenceType válido.
 
-25. Toda RecurrenceConfiguration deberá tener StartDate.
+28. Toda RecurrenceConfiguration deberá tener StartDate.
 
-26. EndDate será opcional.
+29. EndDate será opcional.
 
-27. Una RecurrenceConfiguration deberá estar asociada a un Income o a un
+30. Una RecurrenceConfiguration deberá estar asociada a un Income o a un
     Expense.
 
-28. Una RecurrenceConfiguration no podrá estar asociada simultáneamente a un
+31. Una RecurrenceConfiguration no podrá estar asociada simultáneamente a un
     Income y un Expense.
 
-29. IncomeId y ExpenseId no podrán estar ambos en NULL.
+32. IncomeId y ExpenseId no podrán estar ambos en NULL.
 
-30. IncomeId y ExpenseId no podrán estar ambos informados.
+33. IncomeId y ExpenseId no podrán estar ambos informados.
 
-31. Una definición de Income podrá tener como máximo una
+34. Una definición de Income podrá tener como máximo una
     RecurrenceConfiguration.
 
-32. Una definición de Expense podrá tener como máximo una
+35. Una definición de Expense podrá tener como máximo una
     RecurrenceConfiguration.
 
-33. Una RecurrenceConfiguration activa podrá utilizarse para generar futuras
+36. Una RecurrenceConfiguration activa podrá utilizarse para generar futuras
     ocurrencias EXPECTED.
 
-34. Una RecurrenceConfiguration inactiva no deberá generar nuevas ocurrencias.
+37. Una RecurrenceConfiguration inactiva no deberá generar nuevas ocurrencias.
 
-35. Una RecurrenceConfiguration no representa una ocurrencia financiera.
+38. Una RecurrenceConfiguration no representa una ocurrencia financiera.
 
-36. La configuración de recurrencia deberá contener los parámetros requeridos
+39. La configuración de recurrencia deberá contener los parámetros requeridos
     por el RecurrenceType seleccionado.
 
-37. Una regla de recurrencia mensual deberá calcularse de acuerdo con el
+40. Una regla de recurrencia mensual deberá calcularse de acuerdo con el
     calendario mensual correspondiente y no mediante una suma fija de días
     cuando la regla represente una posición dentro del mes.
 
-38. La regla de recurrencia `MONTHLY_15_LAST` deberá representar el día 15 y
+41. La regla de recurrencia `MONTHLY_15_LAST` deberá representar el día 15 y
     el último día de cada mes.
 
-39. Una regla de recurrencia `BIWEEKLY_WEEKDAY` deberá utilizar DayOfWeek y
+42. Una regla de recurrencia `BIWEEKLY_WEEKDAY` deberá utilizar DayOfWeek y
     AnchorDate para determinar la secuencia de ocurrencias cada dos semanas.
 
-40. Los parámetros de calendario que no correspondan al RecurrenceType
+43. Los parámetros de calendario que no correspondan al RecurrenceType
     seleccionado deberán permanecer NULL.
 
 ##### Income y Expense
 
-41. Todo Income deberá pertenecer a un User.
+44. Todo Income deberá pertenecer a un User.
 
-42. Todo Expense deberá pertenecer a un User.
+45. Todo Expense deberá pertenecer a un User.
 
-43. Todo Income deberá utilizar una Currency válida.
+46. Todo Income deberá utilizar una Currency válida.
 
-44. Todo Expense deberá utilizar una Currency válida.
+47. Todo Expense deberá utilizar una Currency válida.
 
-45. Todo Income deberá utilizar un IncomeType válido.
+48. Todo Income deberá utilizar un IncomeType válido.
 
-46. Todo Expense deberá utilizar una ExpenseCategory válida.
+49. Todo Expense deberá utilizar una ExpenseCategory válida.
 
-47. ExpenseType deberá identificar únicamente los valores permitidos para
+50. ExpenseType deberá identificar únicamente los valores permitidos para
     gasto Fixed o Variable.
 
-48. ExpectedAmount de Income y Expense representará el importe esperado o de
+51. ExpectedAmount de Income y Expense representará el importe esperado o de
     referencia para futuras ocurrencias.
 
-49. El cambio de ExpectedAmount en Income o Expense no deberá modificar
+52. El cambio de ExpectedAmount en Income o Expense no deberá modificar
     ExpectedAmount ni ActualAmount de Financial Event históricos.
 
 ##### Realidad Financiera
 
-50. Un Financial Event EXPECTED representa una expectativa o planificación,
+53. Un Financial Event EXPECTED representa una expectativa o planificación,
     no una ocurrencia financiera confirmada.
 
-51. Un Financial Event CONFIRMED representa una ocurrencia confirmada
+54. Un Financial Event CONFIRMED representa una ocurrencia confirmada
     explícitamente por el Usuario.
 
-52. BudgetKeep no deberá inferir que un evento ocurrió únicamente porque haya
+55. BudgetKeep no deberá inferir que un evento ocurrió únicamente porque haya
     llegado o pasado su fecha esperada.
 
-53. La ausencia de confirmación del Usuario no deberá convertirse
+56. La ausencia de confirmación del Usuario no deberá convertirse
     automáticamente en confirmación por el transcurso del tiempo.
 
-54. La Realidad Financiera confirmada deberá derivarse de Financial Event
+57. La Realidad Financiera confirmada deberá derivarse de Financial Event
     CONFIRMED y de las relaciones financieras correspondientes definidas por
     los demás dominios.
 
 ##### Historial
 
-55. Los Financial Event históricos deberán conservar la información que
+58. Los Financial Event históricos deberán conservar la información que
     correspondía a la ocurrencia cuando fue registrada o confirmada.
 
-56. Los cambios posteriores realizados sobre Income, Expense o
+59. Los cambios posteriores realizados sobre Income, Expense o
     RecurrenceConfiguration no deberán alterar los Financial Event
     históricos.
 
-57. La diferencia entre ExpectedAmount y ActualAmount deberá conservarse para
+60. La diferencia entre ExpectedAmount y ActualAmount deberá conservarse para
     permitir análisis posteriores de desviación entre lo esperado y lo real.
 
-58. La diferencia entre ExpectedDate y ActualDate deberá conservarse cuando
+61. La diferencia entre ExpectedDate y ActualDate deberá conservarse cuando
     ambas existan para permitir análisis posteriores de desviación temporal.
 
 #### 13.3.23.9 Consideraciones de Implementación
@@ -5379,3 +6067,645 @@ La validación confirmó:
 
 El dominio Financial Planning queda establecido como línea base para
 las disciplinas posteriores que dependan de sus entidades y reglas.
+
+### 13.3.26 Dominio: Financial Obligations
+
+El dominio Financial Obligations agrupa las entidades responsables de
+representar los compromisos económicos del Usuario, las Deudas, las
+Prioridades Financieras, los Pagos y las Entidades Relacionadas utilizadas
+en las operaciones financieras.
+
+El dominio soporta principalmente la capacidad funcional:
+
+- FC-003 – Administración de Obligaciones Financieras.
+
+El dominio también proporciona las estructuras persistentes necesarias para
+la administración de Deudas, Prioridades Financieras y Pagos.
+
+Las entidades que conforman este dominio son:
+
+- Financial Obligation
+- Debt
+- Financial Priority
+- Payment
+- Payment Resource
+- Related Entity
+
+Las entidades de soporte son:
+
+- Financial Obligation Type
+- Debt Type
+- Related Entity Type
+- Financial Obligation Recurrence Configuration
+
+Una Financial Obligation representa un compromiso económico específico que
+el Usuario debe atender.
+
+Una Debt representa un compromiso financiero persistente que puede generar
+una o varias Financial Obligations.
+
+Una Financial Priority representa la prioridad definida por el Usuario
+para ordenar la atención de sus Financial Obligations.
+
+Un Payment representa el acto mediante el cual el Usuario atiende total o
+parcialmente una única Financial Obligation.
+
+Una Related Entity representa a una persona u organización distinta del
+Usuario con la que existe una relación financiera.
+
+Financial Event continuará siendo la representación persistente del hecho
+financiero ocurrido.
+
+Payment no sustituye a Financial Event.
+
+Una Transfer entre Financial Resources constituye un hecho distinto y no
+representa por sí misma el cumplimiento de una Financial Obligation.
+
+#### 13.3.26.1 Entity: Financial Obligation
+
+##### 13.3.26.1.1 Objetivo
+
+Representar un compromiso económico específico que el Usuario debe atender
+como parte de su Realidad Financiera.
+
+##### 13.3.26.1.2 Responsabilidades
+
+Financial Obligation es responsable de:
+
+- identificar de forma única la obligación;
+- asociar la obligación con su Usuario propietario;
+- identificar su tipo;
+- conservar el importe comprometido;
+- conservar la moneda original;
+- asociar la obligación con una Debt cuando corresponda;
+- conservar la Prioridad Financiera definida por el Usuario;
+- conservar las fechas necesarias para determinar su situación temporal;
+- permitir registrar uno o varios Payments;
+- conservar la información necesaria para determinar su cumplimiento.
+
+##### 13.3.26.1.3 Relaciones
+
+- User 1:N Financial Obligation.
+- Financial Obligation Type 1:N Financial Obligation.
+- Debt 1:N Financial Obligation.
+- Financial Priority 1:N Financial Obligation.
+- Currency 1:N Financial Obligation.
+- Financial Obligation 1:0..1 Financial Obligation Recurrence Configuration.
+- Financial Obligation 1:N Payment.
+
+Una Financial Obligation podrá existir sin pertenecer a una Debt.
+
+Una Financial Obligation podrá recibir múltiples Payments.
+
+##### 13.3.26.1.4 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|---|---|---|
+| FinancialObligationId | Identificador único de la obligación. | Sí |
+| UserId | Usuario propietario. | Sí |
+| Name | Nombre utilizado para identificar la obligación. | Sí |
+| FinancialObligationTypeId | Tipo de obligación. | Sí |
+| DebtId | Deuda de la que deriva la obligación cuando corresponda. | No |
+| Amount | Importe económico comprometido. | Sí |
+| CurrencyId | Moneda original de la obligación. | Sí |
+| FinancialPriorityId | Prioridad asignada por el Usuario. | No |
+| DueDate | Fecha de vencimiento cuando corresponda. | No |
+| LifecycleStatus | Estado del ciclo de vida de la obligación. | Sí |
+| CreatedAt | Fecha y hora de creación. | Sí |
+| CreatedBy | Usuario responsable de la creación. | No |
+| UpdatedAt | Fecha y hora de la última modificación. | No |
+| UpdatedBy | Usuario responsable de la modificación. | No |
+| DeletedAt | Fecha y hora de eliminación lógica. | No |
+| DeletedBy | Usuario responsable de la eliminación. | No |
+
+El Estado Financiero no se persistirá como una copia independiente.
+
+El Estado Temporal no se persistirá como una copia independiente cuando
+pueda obtenerse mediante las fechas de negocio persistidas.
+
+#### 13.3.26.2 Entity: Debt
+
+##### 13.3.26.2.1 Objetivo
+
+Representar un compromiso financiero persistente del Usuario que mantiene
+un saldo pendiente y que puede generar una o varias Financial Obligations.
+
+##### 13.3.26.2.2 Relaciones
+
+- User 1:N Debt.
+- Debt Type 1:N Debt.
+- Related Entity 1:N Debt.
+- Currency 1:N Debt.
+- Debt 1:N Financial Obligation.
+
+##### 13.3.26.2.3 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|---|---|---|
+| DebtId | Identificador único de la deuda. | Sí |
+| UserId | Usuario propietario. | Sí |
+| Name | Nombre utilizado para identificar la deuda. | Sí |
+| DebtTypeId | Tipo de deuda. | Sí |
+| RelatedEntityId | Entidad Relacionada con la deuda. | No |
+| InitialAmount | Monto inicial de la deuda cuando corresponda. | No |
+| OutstandingBalance | Saldo pendiente de la deuda. | Sí |
+| CurrencyId | Moneda original de la deuda. | Sí |
+| InterestRate | Tasa de interés cuando corresponda. | No |
+| LifecycleStatus | Estado del ciclo de vida de la deuda. | Sí |
+| Notes | Observaciones registradas por el Usuario. | No |
+| CreatedAt | Fecha y hora de creación. | Sí |
+| CreatedBy | Usuario responsable de la creación. | No |
+| UpdatedAt | Fecha y hora de modificación. | No |
+| UpdatedBy | Usuario responsable de la modificación. | No |
+| DeletedAt | Fecha y hora de eliminación lógica. | No |
+| DeletedBy | Usuario responsable de la eliminación. | No |
+
+#### 13.3.26.3 Entity: Financial Priority
+
+##### 13.3.26.3.1 Objetivo
+
+Representar el nivel de prioridad definido por el Usuario para ordenar la
+atención de sus Financial Obligations.
+
+##### 13.3.26.3.2 Relaciones
+
+- User 1:N Financial Priority.
+- Financial Priority 1:N Financial Obligation.
+
+##### 13.3.26.3.3 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|---|---|---|
+| FinancialPriorityId | Identificador único de la prioridad. | Sí |
+| UserId | Usuario propietario. | Sí |
+| Name | Nombre de la prioridad. | Sí |
+| Level | Valor ordinal utilizado para establecer el orden. | Sí |
+| Description | Descripción opcional. | No |
+| LifecycleStatus | Estado del ciclo de vida. | Sí |
+| CreatedAt | Fecha y hora de creación. | Sí |
+| CreatedBy | Usuario responsable de la creación. | No |
+| UpdatedAt | Fecha y hora de modificación. | No |
+| UpdatedBy | Usuario responsable de la modificación. | No |
+
+#### 13.3.26.4 Entity: Payment
+
+##### 13.3.26.4.1 Objetivo
+
+Representar el acto mediante el cual el Usuario atiende total o
+parcialmente una única Financial Obligation.
+
+Payment representa un hecho financiero realizado y confirmado por el
+Usuario.
+
+##### 13.3.26.4.2 Relaciones
+
+- User 1:N Payment.
+- Financial Obligation 1:N Payment.
+- Financial Event 1:0..1 Payment.
+- Payment N:M Financial Resource mediante Payment Resource.
+
+La relación entre Payment y Financial Resource será implementada mediante
+la entidad asociativa Payment Resource.
+
+Cada Payment deberá estar asociado a exactamente una Financial Obligation.
+
+Una Financial Obligation podrá recibir múltiples Payments.
+
+No existirá una relación N:M entre Payment y Financial Obligation.
+
+Payment no tendrá una RelatedEntityId.
+
+La contraparte financiera asociada al Payment podrá determinarse a través
+del Financial Event relacionado y, cuando corresponda, mediante la
+Financial Obligation o Debt asociada.
+
+Un Payment atiende una Financial Obligation en la Currency definida por
+dicha obligación.
+
+Un Payment podrá utilizar uno o varios Financial Resources, incluso cuando
+los Resources utilicen diferentes Currencies.
+
+##### 13.3.26.4.3 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|---|---|---|
+| PaymentId | Identificador único del pago. | Sí |
+| UserId | Usuario propietario. | Sí |
+| FinancialObligationId | Obligación Financiera atendida por el pago. | Sí |
+| FinancialEventId | Evento Financiero que representa el hecho financiero del pago. | Sí |
+| CreatedAt | Fecha y hora de registro del pago. | Sí |
+| CreatedBy | Usuario responsable de la creación. | No |
+| UpdatedAt | Fecha y hora de modificación. | No |
+| UpdatedBy | Usuario responsable de la modificación. | No |
+| DeletedAt | Fecha y hora de eliminación lógica. | No |
+| DeletedBy | Usuario responsable de la eliminación. | No |
+
+El importe, fecha y moneda del Payment serán representados por el
+Financial Event asociado.
+
+Payment no duplicará dichos valores.
+
+##### 13.3.26.4.4 Regla de cardinalidad
+
+Una Financial Obligation podrá recibir cero, uno o múltiples Payments.
+
+Cada Payment deberá pertenecer a una única Financial Obligation.
+
+Si una misma operación financiera atiende múltiples Financial Obligations,
+se registrará un Payment independiente para cada Financial Obligation.
+
+#### 13.3.26.5 Entity: Payment Resource
+
+##### 13.3.26.5.1 Objetivo
+
+Representar la aplicación de un Financial Resource específico para
+financiar un Payment.
+
+Payment Resource permite conservar cómo se utilizó cada Financial Resource
+para atender una Financial Obligation y conservar la conversión monetaria
+real cuando la moneda del Resource sea diferente de la Currency de la
+Financial Obligation.
+
+##### 13.3.26.5.2 Relaciones
+
+- Payment 1:N Payment Resource.
+- Financial Resource 1:N Payment Resource.
+
+La relación conceptual entre Payment y Financial Resource es N:M y será
+persistida mediante Payment Resource.
+
+Un Payment podrá utilizar múltiples Financial Resources.
+
+Un Financial Resource podrá utilizarse en múltiples Payments.
+
+Los Financial Resources utilizados deberán pertenecer al mismo User que
+el Payment.
+
+##### 13.3.26.5.3 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|---|---|---|
+| PaymentResourceId | Identificador único de la aplicación del recurso al Payment. | Sí |
+| PaymentId | Payment al que se aplica el recurso. | Sí |
+| FinancialResourceId | Financial Resource utilizado. | Sí |
+| AmountUsed | Importe realmente utilizado del Financial Resource en su propia Currency. | Sí |
+| ExchangeRate | Tipo de cambio realmente aplicado para convertir AmountUsed a la Currency de la Financial Obligation. | Sí |
+| AppliedAmount | Importe resultante aplicado a la Financial Obligation en la Currency de dicha obligación. | Sí |
+| CreatedAt | Fecha y hora de registro de la aplicación del recurso. | Sí |
+| CreatedBy | Usuario responsable de la operación. | No |
+
+La Currency utilizada para AmountUsed se obtiene del Financial Resource
+relacionado.
+
+La Currency de AppliedAmount se obtiene de la Financial Obligation asociada
+al Payment.
+
+Cuando ambas Currencies sean iguales, ExchangeRate deberá representar una
+conversión de 1:1.
+
+ExchangeRate representa la tasa realmente aplicada por la entidad financiera
+al momento de realizar el Payment.
+
+Payment Resource conserva esta información como parte de la realidad
+financiera histórica y no deberá recalcularse posteriormente por cambios
+en la Base Currency del Usuario.
+
+#### 13.3.26.6 Entity: Related Entity
+
+##### 13.3.26.6.1 Objetivo
+
+Representar a una persona u organización distinta del Usuario con la que
+existe o existió una relación financiera.
+
+##### 13.3.26.6.2 Relaciones
+
+- User 1:N Related Entity.
+- Related Entity Type 1:N Related Entity.
+- Related Entity 1:N Financial Event.
+- Related Entity 1:N Debt.
+
+Una Related Entity podrá estar asociada a múltiples Financial Events.
+
+Una Related Entity podrá estar asociada a múltiples Debts.
+
+Una Related Entity no se asociará directamente a Payment.
+
+Una Related Entity no se asociará directamente a Financial Obligation.
+
+Cuando una Financial Obligation pertenezca a una Debt, la Related Entity
+de la Debt podrá utilizarse para identificar la contraparte de la relación
+financiera.
+
+La asociación con Financial Event permitirá identificar una contraparte
+específica de una ocurrencia financiera cuando el Usuario decida registrarla.
+
+##### 13.3.26.6.3 Atributos
+
+| Atributo | Descripción | Obligatorio |
+|---|---|---|
+| RelatedEntityId | Identificador único. | Sí |
+| UserId | Usuario propietario de la relación. | Sí |
+| Name | Nombre de la persona u organización. | Sí |
+| RelatedEntityTypeId | Tipo de Entidad Relacionada. | Sí |
+| LifecycleStatus | Estado del ciclo de vida. | Sí |
+| Notes | Observaciones. | No |
+| CreatedAt | Fecha y hora de creación. | Sí |
+| CreatedBy | Usuario responsable de la creación. | No |
+| UpdatedAt | Fecha y hora de modificación. | No |
+| UpdatedBy | Usuario responsable de la modificación. | No |
+| DeletedAt | Fecha y hora de eliminación lógica. | No |
+| DeletedBy | Usuario responsable de la eliminación. | No |
+
+#### 13.3.26.7 Entity: Financial Obligation Type
+
+Entidad de soporte utilizada para clasificar Financial Obligations.
+
+Deberá permitir mantener valores controlados proporcionados por el
+producto y, cuando corresponda, valores definidos por el Usuario.
+
+#### 13.3.26.8 Entity: Debt Type
+
+Entidad de soporte utilizada para clasificar Debts.
+
+Deberá permitir mantener valores controlados proporcionados por el
+producto y, cuando corresponda, valores definidos por el Usuario.
+
+#### 13.3.26.9 Entity: Related Entity Type
+
+Entidad de soporte utilizada para clasificar Related Entities.
+
+Deberá permitir mantener valores controlados proporcionados por el
+producto y, cuando corresponda, valores definidos por el Usuario.
+
+#### 13.3.26.10 Entity: Financial Obligation Recurrence Configuration
+
+Entidad de soporte utilizada para definir la recurrencia de una
+Financial Obligation.
+
+Una Financial Obligation podrá tener como máximo una configuración activa
+de recurrencia.
+
+La configuración de recurrencia no representa por sí misma una
+Financial Obligation.
+
+La modificación de una configuración de recurrencia no deberá modificar
+Financial Obligations históricas.
+
+#### 13.3.26.11 Relaciones del Dominio Financial Obligations
+
+##### User
+
+- User 1:N Financial Obligation.
+- User 1:N Debt.
+- User 1:N Financial Priority.
+- User 1:N Payment.
+- User 1:N Related Entity.
+
+##### Financial Obligation
+
+- Financial Obligation N:1 Financial Obligation Type.
+- Financial Obligation N:1 Debt.
+- Financial Obligation N:1 Financial Priority.
+- Financial Obligation N:1 Currency.
+- Financial Obligation 1:0..1 Financial Obligation Recurrence Configuration.
+- Financial Obligation 1:N Payment.
+
+##### Debt
+
+- Debt N:1 Debt Type.
+- Debt N:1 Related Entity.
+- Debt N:1 Currency.
+- Debt 1:N Financial Obligation.
+
+##### Financial Priority
+
+- Financial Priority 1:N Financial Obligation.
+
+##### Payment
+
+- Payment N:1 Financial Obligation.
+- Payment 1:0..1 Financial Event.
+- Payment N:M Financial Resource mediante Payment Resource.
+
+##### Payment Resource
+
+- Payment Resource N:1 Payment.
+- Payment Resource N:1 Financial Resource.
+
+##### Related Entity
+
+- Related Entity N:1 Related Entity Type.
+- Related Entity 1:N Financial Event.
+- Related Entity 1:N Debt.
+
+##### Financial Event
+
+- Financial Event N:1 Related Entity cuando el Usuario decida identificar
+  una contraparte.
+
+##### Recurrence
+
+- RecurrenceType 1:N Financial Obligation Recurrence Configuration.
+- Financial Obligation 1:0..1 Financial Obligation Recurrence Configuration.
+
+Payment N:M Financial Resource se implementará mediante Payment Resource.
+
+No existirá una entidad PaymentObligation.
+
+No existirá una relación directa Payment → Related Entity.
+
+No existirá una relación directa Financial Obligation → Related Entity.
+
+#### 13.3.26.12 Reglas de Integridad del Dominio Financial Obligations
+
+##### Financial Obligation
+
+1. Toda Financial Obligation deberá pertenecer obligatoriamente a un User.
+
+2. Toda Financial Obligation deberá tener un Financial Obligation Type válido.
+
+3. Una Financial Obligation podrá o no pertenecer a una Debt.
+
+4. Cuando una Financial Obligation pertenezca a una Debt, ambas deberán
+   pertenecer al mismo User.
+
+5. Una Financial Obligation deberá conservar su Currency original.
+
+6. Una Financial Obligation podrá tener una Financial Priority.
+
+7. Una Financial Priority asignada a una Financial Obligation deberá
+   pertenecer al mismo User.
+
+8. Una Financial Obligation podrá recibir múltiples Payments.
+
+9. La información del importe comprometido de una Financial Obligation no
+   deberá ser reemplazada por los importes de los Payments realizados.
+
+10. El Financial Status de una Financial Obligation deberá obtenerse a
+    partir de la información persistente de la obligación y sus Payments.
+
+##### Debt
+
+11. Toda Debt deberá pertenecer obligatoriamente a un User.
+
+12. Toda Debt deberá tener un Debt Type válido.
+
+13. Una Debt podrá generar múltiples Financial Obligations.
+
+14. Una Debt podrá existir sin Financial Obligations.
+
+15. Una Debt deberá conservar su Currency original.
+
+16. El Outstanding Balance no deberá ser negativo.
+
+17. Una Debt podrá permanecer ACTIVE aunque su Outstanding Balance sea cero
+    hasta que el Usuario decida cerrarla.
+
+18. Una Debt CLOSED podrá reabrirse conforme a las reglas de negocio cuando
+    vuelva a presentar saldo pendiente.
+
+##### Financial Priority
+
+19. Toda Financial Priority deberá pertenecer a un único User.
+
+20. Una Financial Priority podrá asignarse a múltiples Financial Obligations.
+
+21. BudgetKeep no deberá modificar automáticamente la Financial Priority
+    definida por el Usuario.
+
+##### Payment
+
+22. Todo Payment deberá pertenecer obligatoriamente a un User.
+
+23. Todo Payment deberá estar asociado a exactamente una Financial
+    Obligation.
+
+24. Una Financial Obligation podrá tener múltiples Payments.
+
+25. Un Payment podrá representar un pago total o parcial de su Financial
+    Obligation.
+
+26. Un Payment deberá estar asociado a un único Financial Event.
+
+27. El Financial Event asociado a un Payment deberá estar CONFIRMED.
+
+28. El Financial Event asociado a un Payment deberá tener EventType = EXPENSE.
+
+29. Payment no deberá existir como proyección o evento esperado.
+
+30. El importe, fecha y Currency de un Payment deberán corresponder al
+    Financial Event asociado y a la Financial Obligation atendida.
+
+31. Un Payment atenderá la Financial Obligation utilizando la Currency
+    definida por dicha obligación.
+
+32. Si una misma operación financiera atiende múltiples Financial
+    Obligations, deberá registrarse un Payment independiente para cada
+    Financial Obligation atendida.
+
+33. No deberá existir una entidad asociativa entre Payment y Financial
+    Obligation.
+
+34. Una Transfer entre Financial Resources no deberá considerarse por sí
+    misma un Payment ni el cumplimiento de una Financial Obligation.
+
+35. Un Payment podrá utilizar uno o varios Financial Resources.
+
+36. Los Financial Resources utilizados por un Payment deberán pertenecer al
+    mismo User propietario del Payment.
+
+37. Un Payment podrá utilizar Financial Resources con diferentes Currencies.
+
+38. Cada utilización de un Financial Resource dentro de un Payment deberá
+    registrarse mediante Payment Resource.
+
+39. AmountUsed deberá representar el importe realmente utilizado del
+    Financial Resource en la Currency de dicho Resource.
+
+40. AppliedAmount deberá representar el importe equivalente aplicado a la
+    Financial Obligation en la Currency de dicha obligación.
+
+41. ExchangeRate deberá representar el tipo de cambio realmente aplicado
+    para convertir AmountUsed a AppliedAmount.
+
+42. La suma de AppliedAmount de todos los Payment Resource de un Payment
+    deberá ser igual al importe aplicado por el Payment a la Financial
+    Obligation.
+
+43. Cuando la Currency del Financial Resource y la Currency de la Financial
+    Obligation sean iguales, ExchangeRate deberá representar una conversión
+    1:1.
+
+44. ExchangeRate de Payment Resource deberá conservarse como información
+    histórica y no deberá modificarse como consecuencia de cambios
+    posteriores en la Base Currency del Usuario.
+
+45. Payment no tendrá RelatedEntityId.
+
+46. La contraparte asociada al Payment deberá determinarse mediante las
+    relaciones persistentes del Financial Event, Financial Obligation o
+    Debt, según corresponda.
+
+##### Related Entity
+
+47. Toda Related Entity deberá pertenecer a un único User.
+
+48. Toda Related Entity deberá tener un Related Entity Type válido.
+
+49. Una Related Entity podrá asociarse a múltiples Financial Events.
+
+50. Una Related Entity podrá asociarse a múltiples Debts.
+
+51. Una Related Entity podrá ser utilizada por el Usuario como contraparte
+    identificable de una ocurrencia financiera, pero su asociación con un
+    Financial Event será opcional.
+
+52. La ausencia de RelatedEntityId en Financial Event no impedirá registrar
+    ni confirmar la ocurrencia financiera.
+
+53. Una Related Entity no deberá representar obligatoriamente el comercio o
+    establecimiento donde se realizó una compra.
+
+54. Retirar una Related Entity no deberá eliminar ni modificar información
+    histórica asociada.
+
+55. Una Related Entity siempre deberá representar una persona u organización
+    distinta del User.
+
+##### Recurrence
+
+56. Una Financial Obligation podrá tener como máximo una configuración activa
+    de recurrencia.
+
+57. Una Financial Obligation Recurrence Configuration deberá pertenecer a
+    una única Financial Obligation.
+
+58. La configuración de recurrencia de Financial Obligation será
+    independiente de RecurrenceConfiguration de Financial Events.
+
+59. La modificación de una configuración de recurrencia no deberá modificar
+    Financial Obligations históricas.
+
+##### Integridad de propietario
+
+60. Las entidades financieras relacionadas mediante Financial Obligation,
+    Debt, Financial Priority, Payment, Payment Resource y Related Entity
+    deberán conservar consistencia de UserId.
+
+61. No deberá permitirse que un Payment de un User se relacione con una
+    Financial Obligation perteneciente a otro User.
+
+62. No deberá permitirse que un Payment utilice un Financial Resource
+    perteneciente a otro User.
+
+63. No deberá permitirse que una Financial Obligation se relacione con una
+    Debt o Financial Priority perteneciente a otro User.
+
+64. No deberá permitirse que una Debt se relacione con una Related Entity
+    perteneciente a otro User.
+
+65. No deberá permitirse que un Financial Event se relacione con una
+    Related Entity perteneciente a otro User.
+
+66. No deberá permitirse que un Payment Resource se relacione con un
+    Payment o Financial Resource perteneciente a otro User.

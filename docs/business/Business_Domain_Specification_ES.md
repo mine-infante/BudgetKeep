@@ -329,11 +329,20 @@ La modificación de la Configuración de Recurrencia afectará únicamente las o
 
 ### Definición
 
-Representa el acto mediante el cual el Usuario atiende total o parcialmente una Obligación Financiera utilizando uno o varios Recursos Financieros.
+Representa el acto mediante el cual el Usuario atiende total o parcialmente
+una única Obligación Financiera utilizando uno o varios Recursos Financieros.
 
-Un Pago constituye un evento de negocio que modifica la Realidad Financiera del Usuario al actualizar el Estado Financiero de la Obligación Financiera correspondiente.
+Un Pago constituye un evento de negocio que modifica la Realidad Financiera
+del Usuario al actualizar el Estado Financiero de la Obligación Financiera
+correspondiente.
 
-El Pago no representa un movimiento bancario ni una transacción entre cuentas. Representa el hecho de que el Usuario ha atendido una Obligación Financiera.
+El Pago no representa un movimiento bancario ni una transacción entre
+cuentas. Representa el hecho de que el Usuario ha atendido una Obligación
+Financiera.
+
+Cuando una misma transferencia o disposición de recursos esté destinada a
+atender múltiples Obligaciones Financieras, deberá existir un Pago
+independiente para cada Obligación Financiera atendida.
 
 ---
 

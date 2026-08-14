@@ -157,3 +157,107 @@ This rule preserves the identity and strategic focus of BudgetKeep.
 ## Source
 
 Product_Vision_v1.0.md
+
+---
+
+# Decision BK-DEC-006
+
+## Title
+
+Payment and Financial Obligation Relationship
+
+## Status
+
+Approved
+
+## Decision
+
+A Payment shall attend exactly one Financial Obligation.
+
+A Financial Obligation may receive multiple Payments, allowing partial
+payments.
+
+If a single financial operation or transfer of funds is intended to attend
+multiple Financial Obligations, a separate Payment shall be registered for
+each Financial Obligation attended.
+
+A Transfer between Financial Resources is a distinct financial event and
+does not by itself constitute the fulfillment of a Financial Obligation.
+
+## Rationale
+
+BudgetKeep must maintain each Financial Obligation as an independent unit
+of control so that the User can determine clearly whether an obligation has
+been fully or partially attended, how much has been paid and when the
+payment was applied.
+
+Separating Transfers from Payments also preserves the distinction between
+moving money between the User's Financial Resources and applying money to
+fulfill a Financial Obligation.
+
+This model allows a single Financial Obligation to receive multiple
+Payments while avoiding unnecessary many-to-many persistence between
+Payments and Financial Obligations.
+
+## Source
+
+User clarification during Database Design — Financial Obligations domain.
+
+---
+
+# Decision BK-DEC-007
+
+## Title
+
+Financial Event Historical Currency and Payment Resource Conversion
+
+## Status
+
+Approved
+
+## Decision
+
+Financial Event shall preserve the Currency of the financial occurrence.
+
+The User's Base Currency is a configurable presentation and analysis
+preference and shall not modify the historical currency of financial data.
+
+A Payment shall attend a Financial Obligation in the Currency defined by
+that obligation.
+
+A Payment may use one or more Financial Resources, including Resources
+with different currencies.
+
+Each Payment Resource allocation shall preserve:
+
+- the amount actually used from the Financial Resource;
+- the Currency of the Financial Resource;
+- the Exchange Rate actually applied to convert that amount to the Currency
+  of the Financial Obligation;
+- the resulting amount applied to the Financial Obligation.
+
+The actual Exchange Rate applied to a Payment Resource is historical
+financial reality and shall not be recalculated when the User changes the
+Base Currency.
+
+Reference Exchange Rates shall be maintained separately for future
+Budget, Forecast and presentation purposes and shall never replace the
+historical Exchange Rate actually applied to a Payment Resource.
+
+## Rationale
+
+BudgetKeep must preserve the financial reality exactly as it occurred,
+independently of the User's current preferred presentation currency.
+
+A Payment may be funded by multiple Financial Resources and those Resources
+may use different currencies. Therefore, the conversion belongs to each
+Payment Resource allocation rather than to Payment as a single global
+conversion.
+
+Separating actual conversion rates from reference exchange rates prevents
+historical financial facts from being altered by later changes in currency
+preferences or market rates.
+
+## Source
+
+User clarification during Database Design — Financial Obligations domain.
